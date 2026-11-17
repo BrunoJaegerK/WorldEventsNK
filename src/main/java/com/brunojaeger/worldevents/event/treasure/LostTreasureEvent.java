@@ -2,6 +2,7 @@ package com.brunojaeger.worldevents.event.treasure;
 
 import cn.nukkit.Player;
 import cn.nukkit.block.Block;
+import cn.nukkit.blockentity.BlockEntityChest;
 import com.brunojaeger.worldevents.WorldEventsNK;
 import com.brunojaeger.worldevents.core.EventState;
 import com.brunojaeger.worldevents.event.WorldEvent;
@@ -61,11 +62,28 @@ public final class LostTreasureEvent implements WorldEvent {
         }
         chestPlaced = location.getLevel().setBlock(location.getX(), chestY, location.getZ(),
                 Block.get(Block.CHEST), false, true);
-        if (!chestPlaced || !storage.markTreasureActive()) {
-            if (chestPlaced) {
-                location.getLevel().setBlock(location.getX(), chestY, location.getZ(),
-                        Block.get(Block.AIR), false, true);
-            }
+        if (!chestPlaced) {
+            storage.clearTreasure();
+            state = EventState.FAILED;
+            return false;
+        }
+
+        BlockEntityChest chestEntity = storage.createOrGetChestEntity(
+                location.getLevel(), location.getX(), chestY, location.getZ());
+        if (chestEntity == null || !storage.markChestEntity(chestEntity, storageMarker)) {
+            if (chestEntity != null) chestEntity.close();
+            location.getLevel().setBlock(location.getX(), chestY, location.getZ(),
+                    Block.get(Block.AIR), false, true);
+            storage.clearTreasure();
+            chestPlaced = false;
+            state = EventState.FAILED;
+            plugin.getLogger().warning("No se pudo marcar el cofre temporal de LostTreasure.");
+            return false;
+        }
+        if (!storage.markTreasureActive()) {
+            chestEntity.close();
+            location.getLevel().setBlock(location.getX(), chestY, location.getZ(),
+                    Block.get(Block.AIR), false, true);
             storage.clearTreasure();
             chestPlaced = false;
             state = EventState.FAILED;
@@ -161,6 +179,13 @@ public final class LostTreasureEvent implements WorldEvent {
         return state == EventState.COMPLETED || state == EventState.FAILED;
     }
 
-    public boolean isClaimed() { return claimed; }
+    public boolean ownsChest(cn.nukkit.level.Level level, int x, int y, int z) {
+        return chestPlaced && !claimed && location != null
+                && location.getLevel() == level && location.getX() == x
+                && location.getY() + 1 == y && location.getZ() == z
+                && storage.ownsTreasureChest(level, x, y, z, storageMarker);
+    }
+
+    public boolean isClaimed() { return claimed || storage.isTreasureClaimed(); }
     public EventLocation getLocation() { return location; }
 }

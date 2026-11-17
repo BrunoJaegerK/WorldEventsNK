@@ -37,7 +37,11 @@ public final class RewardManager {
     private void giveItem(Player player, int itemId, String minPath, String maxPath, int defaultMin, int defaultMax) {
         int min = Math.max(0, rewards.getInt(minPath, defaultMin));
         int max = Math.max(min, rewards.getInt(maxPath, defaultMax));
-        if (max > 0) player.getInventory().addItem(Item.get(itemId, 0,
-                ThreadLocalRandom.current().nextInt(min, max + 1)));
+        if (max > 0) {
+            Item reward = Item.get(itemId, 0, ThreadLocalRandom.current().nextInt(min, max + 1));
+            for (Item leftover : player.getInventory().addItem(reward)) {
+                player.getLevel().dropItem(player, leftover);
+            }
+        }
     }
 }

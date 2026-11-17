@@ -16,6 +16,8 @@ public final class LostTreasureEvent implements WorldEvent {
     private EventState state = EventState.IDLE;
     private EventLocation location;
     private int remainingSeconds;
+    private int elapsedSeconds;
+    private int hintsSent;
     private boolean claimed;
     private boolean chestPlaced;
 
@@ -84,11 +86,36 @@ public final class LostTreasureEvent implements WorldEvent {
     @Override
     public void tick() {
         if (state != EventState.ACTIVE) return;
+        elapsedSeconds++;
+        sendProgressiveHint();
         if (--remainingSeconds <= 0) {
             removeChestIfUnchanged();
             state = EventState.COMPLETED;
             plugin.getServer().broadcastMessage("§7El tesoro perdido ha desaparecido sin ser reclamado.");
         }
+    }
+
+
+    private void sendProgressiveHint() {
+        int interval = Math.max(15, plugin.getConfig().getInt("losttreasure.hint-interval-seconds", 120));
+        int maximum = Math.max(0, plugin.getConfig().getInt("losttreasure.maximum-hints", 3));
+        if (hintsSent >= maximum || elapsedSeconds < (hintsSent + 1) * interval) return;
+
+        int offset = switch (hintsSent) {
+            case 0 -> 64;
+            case 1 -> 24;
+            default -> 0;
+        };
+        String hint;
+        if (offset == 0) {
+            hint = location.getX() + ", " + location.getZ();
+        } else {
+            hint = "X " + (location.getX() - offset) + " a " + (location.getX() + offset)
+                    + ", Z " + (location.getZ() - offset) + " a " + (location.getZ() + offset);
+        }
+        plugin.getServer().broadcastMessage(plugin.getMessages().get("treasure-hint")
+                .replace("{hint}", hint));
+        hintsSent++;
     }
 
     private void removeChestIfUnchanged() {

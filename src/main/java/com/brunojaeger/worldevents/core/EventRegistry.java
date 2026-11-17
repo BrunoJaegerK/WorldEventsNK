@@ -18,12 +18,12 @@ public final class EventRegistry {
     }
 
     public WorldEvent create(String id) {
-        Supplier<WorldEvent> factory = factories.get(id.toLowerCase());
+        Supplier<WorldEvent> factory = factories.get(id.toLowerCase(Locale.ROOT));
         return factory == null ? null : factory.get();
     }
 
     public boolean contains(String id) {
-        return factories.containsKey(id.toLowerCase());
+        return factories.containsKey(id.toLowerCase(Locale.ROOT));
     }
 
     public Map<String, Supplier<WorldEvent>> getFactories() {

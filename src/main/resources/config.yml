@@ -5,6 +5,7 @@ settings:
 events:
   enabled: true
   automatic: true
+  avoid-consecutive-same-event: true
   minimum-online-players: 3
   minimum-interval-seconds: 1800
   maximum-interval-seconds: 3600
@@ -26,6 +27,9 @@ losttreasure:
   claim-radius: 5
   hint-interval-seconds: 120
   maximum-hints: 3
+  hint-radius-first: 96
+  hint-radius-second: 32
+  hint-radius-third: 0
 
 economy:
   enabled: true
@@ -40,7 +44,6 @@ statistics:
 
 performance:
   max-block-changes-per-event: 150
-
 
 history:
   enabled: true

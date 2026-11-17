@@ -22,7 +22,7 @@ jobs:
       - name: Checkout Nukkit PetteriM1 Edition release
         uses: actions/checkout@v4
         with:
-          repository: PetteriM1/NukkitPetteriM1Edition
+          repository: BrunoJaegerK/NukkitPetteriM1Edition
           ref: release
           path: NukkitPetteriM1Edition
       - name: Build and install PM1E API

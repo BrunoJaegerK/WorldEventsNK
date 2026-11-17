@@ -150,17 +150,23 @@ public final class LostTreasureEvent implements WorldEvent {
         int maximum = Math.max(0, Math.min(3, plugin.getConfig().getInt("losttreasure.maximum-hints", 3)));
         if (hintsSent >= maximum || elapsedSeconds < (hintsSent + 1) * interval) return;
 
-        int offset = switch (hintsSent) {
-            case 0 -> 64;
-            case 1 -> 24;
-            default -> 0;
+        int radius = switch (hintsSent) {
+            case 0 -> Math.max(0, Math.min(1_000_000,
+                    plugin.getConfig().getInt("losttreasure.hint-radius-first", 96)));
+            case 1 -> Math.max(0, Math.min(1_000_000,
+                    plugin.getConfig().getInt("losttreasure.hint-radius-second", 32)));
+            default -> Math.max(0, Math.min(1_000_000,
+                    plugin.getConfig().getInt("losttreasure.hint-radius-third", 0)));
         };
         String hint;
-        if (offset == 0) {
-            hint = location.getX() + ", " + location.getZ();
+        if (radius == 0) {
+            hint = "X " + location.getX() + ", Z " + location.getZ();
         } else {
-            hint = "X " + (location.getX() - offset) + " a " + (location.getX() + offset)
-                    + ", Z " + (location.getZ() - offset) + " a " + (location.getZ() + offset);
+            long minX = (long) location.getX() - radius;
+            long maxX = (long) location.getX() + radius;
+            long minZ = (long) location.getZ() - radius;
+            long maxZ = (long) location.getZ() + radius;
+            hint = "X " + minX + " a " + maxX + ", Z " + minZ + " a " + maxZ;
         }
         plugin.getServer().broadcastMessage(plugin.getMessages().format("treasure-hint", "{hint}", hint));
         hintsSent++;

@@ -146,7 +146,7 @@ public final class LostTreasureEvent implements WorldEvent {
 
     private void sendProgressiveHint() {
         int interval = Math.max(15, plugin.getConfig().getInt("losttreasure.hint-interval-seconds", 120));
-        int maximum = Math.max(0, plugin.getConfig().getInt("losttreasure.maximum-hints", 3));
+        int maximum = Math.max(0, Math.min(3, plugin.getConfig().getInt("losttreasure.maximum-hints", 3)));
         if (hintsSent >= maximum || elapsedSeconds < (hintsSent + 1) * interval) return;
 
         int offset = switch (hintsSent) {

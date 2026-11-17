@@ -47,14 +47,25 @@ public final class SafeLocationFinder {
             for (Player player : plugin.getServer().getOnlinePlayers().values()) {
                 if (player.getLevel() == level) playersInWorld.add(player);
             }
-            if (playersInWorld.isEmpty()) continue;
-
             for (int i = 0; i < attempts; i++) {
-                Player anchor = playersInWorld.get(ThreadLocalRandom.current().nextInt(playersInWorld.size()));
+                double anchorX;
+                double anchorZ;
+                int distanceFromAnchor;
+                if (!playersInWorld.isEmpty()) {
+                    Player anchor = playersInWorld.get(ThreadLocalRandom.current().nextInt(playersInWorld.size()));
+                    anchorX = anchor.getX();
+                    anchorZ = anchor.getZ();
+                    distanceFromAnchor = ThreadLocalRandom.current().nextInt(64, 193);
+                } else {
+                    // También se consideran mundos cargados sin jugadores, usando solo chunks de spawn ya cargados.
+                    anchorX = spawn.x;
+                    anchorZ = spawn.z;
+                    distanceFromAnchor = ThreadLocalRandom.current().nextInt(
+                            Math.max(64, minDistance), Math.max(Math.max(64, minDistance) + 1, minDistance + 129));
+                }
                 double angle = ThreadLocalRandom.current().nextDouble(0, Math.PI * 2);
-                int distanceFromPlayer = ThreadLocalRandom.current().nextInt(64, 193);
-                int x = (int) Math.floor(anchor.getX() + Math.cos(angle) * distanceFromPlayer);
-                int z = (int) Math.floor(anchor.getZ() + Math.sin(angle) * distanceFromPlayer);
+                int x = (int) Math.floor(anchorX + Math.cos(angle) * distanceFromAnchor);
+                int z = (int) Math.floor(anchorZ + Math.sin(angle) * distanceFromAnchor);
 
                 double spawnDistanceSquared = (x - spawn.x) * (double) (x - spawn.x)
                         + (z - spawn.z) * (double) (z - spawn.z);

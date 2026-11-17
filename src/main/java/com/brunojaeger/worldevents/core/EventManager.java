@@ -98,10 +98,23 @@ public final class EventManager {
             return;
         }
         if (activeEvent != null) {
-            activeEvent.tick();
-            if (activeEvent.isFinished()) {
+            WorldEvent current = activeEvent;
+            try {
+                current.tick();
+            } catch (RuntimeException error) {
+                plugin.getLogger().error("Error durante tick del evento " + current.getId() + ".", error);
+                try {
+                    current.stop();
+                } catch (RuntimeException cleanupError) {
+                    plugin.getLogger().error("No se pudo completar la limpieza del evento " + current.getId() + ".", cleanupError);
+                }
+                activeEvent = null;
+                resetAutomaticCountdown();
+                return;
+            }
+            if (current.isFinished()) {
                 plugin.getServer().broadcastMessage(plugin.getMessages().format(
-                        "event-finished", "{event}", activeEvent.getId()));
+                        "event-finished", "{event}", current.getId()));
                 activeEvent = null;
                 resetAutomaticCountdown();
             }

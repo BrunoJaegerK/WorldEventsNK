@@ -71,18 +71,18 @@ public final class EventManager {
 
     private String chooseRandomEvent() {
         List<String> candidates = new ArrayList<>();
-        int totalWeight = 0;
+        long totalWeight = 0L;
         for (String id : registry.getFactories().keySet()) {
             if (!eventDefinitions.getBoolean(id + ".enabled", true)) continue;
             int weight = Math.max(0, eventDefinitions.getInt(id + ".weight", 50));
             if (weight == 0) continue;
             candidates.add(id);
-            totalWeight += weight;
+            totalWeight += (long) weight;
         }
         if (totalWeight <= 0) return null;
-        int selection = ThreadLocalRandom.current().nextInt(totalWeight);
+        long selection = ThreadLocalRandom.current().nextLong(totalWeight);
         for (String id : candidates) {
-            selection -= eventDefinitions.getInt(id + ".weight", 50);
+            selection -= (long) Math.max(0, eventDefinitions.getInt(id + ".weight", 50));
             if (selection < 0) return id;
         }
         return candidates.get(candidates.size() - 1);

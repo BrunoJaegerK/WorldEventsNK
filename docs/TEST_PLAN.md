@@ -13,6 +13,7 @@ Este documento separa las pruebas automatizadas de las que necesitan una instanc
 
 - [ ] Instalar el JAR en una copia de pruebas de PM1E y confirmar que habilita sin errores.
 - [ ] Confirmar que se crean `config.yml`, `events.yml`, `rewards.yml`, `integrations.yml` y `lang/es_ES.yml`.
+- [ ] En una copia de una versión anterior sin `integrations.yml`, cambiar ajustes de economía/protección en `config.yml`, actualizar y comprobar que se migran a `integrations.yml` sin sobrescribir un archivo de integraciones preexistente.
 - [ ] Desactivar `economy.enabled` en `integrations.yml`; confirmar que las recompensas de objetos siguen funcionando.
 - [ ] Instalar EconomyAPI y comprobar el depósito de una cantidad de prueba.
 - [ ] Cambiar `economy.provider`/ `economy.class` a una integración compatible y confirmar que la conexión se detecta o falla de forma controlada.

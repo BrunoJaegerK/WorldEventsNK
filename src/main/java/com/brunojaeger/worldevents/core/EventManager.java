@@ -1,6 +1,9 @@
 package com.brunojaeger.worldevents.core;
 
 import cn.nukkit.Player;
+import cn.nukkit.block.Block;
+import cn.nukkit.level.Level;
+import cn.nukkit.utils.Config;
 import com.brunojaeger.worldevents.WorldEventsNK;
 import com.brunojaeger.worldevents.event.WorldEvent;
 import com.brunojaeger.worldevents.event.meteor.MeteorFallEvent;
@@ -10,6 +13,7 @@ import com.brunojaeger.worldevents.integration.protection.ProtectionManager;
 import com.brunojaeger.worldevents.reward.RewardManager;
 import com.brunojaeger.worldevents.world.SafeLocationFinder;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -20,6 +24,7 @@ public final class EventManager {
     private final SafeLocationFinder locations;
     private final EconomyManager economy;
     private final RewardManager rewards;
+    private final Config eventDefinitions;
     private WorldEvent activeEvent;
     private int automaticCountdown;
 
@@ -28,6 +33,7 @@ public final class EventManager {
         this.locations = new SafeLocationFinder(plugin, protection);
         this.economy = new EconomyManager(plugin);
         this.rewards = new RewardManager(plugin, economy);
+        this.eventDefinitions = new Config(new File(plugin.getDataFolder(), "events.yml"), Config.YAML);
         resetAutomaticCountdown();
     }
 
@@ -35,7 +41,7 @@ public final class EventManager {
         if (activeEvent != null && !activeEvent.isFinished()) return false;
         String normalized = id.toLowerCase(Locale.ROOT);
         if ("random".equals(normalized)) normalized = chooseRandomEvent();
-        if (normalized == null) return false;
+        if (normalized == null || !eventDefinitions.getBoolean(normalized + ".enabled", true)) return false;
 
         WorldEvent event;
         switch (normalized) {
@@ -44,7 +50,7 @@ public final class EventManager {
             default -> { return false; }
         }
         if (!event.start()) {
-            plugin.getLogger().warning("No se pudo iniciar el evento " + normalized + ": no hay ubicación válida.");
+            plugin.getLogger().warning("No se pudo iniciar " + normalized + ": no se encontró una ubicación válida.");
             return false;
         }
         activeEvent = event;
@@ -53,12 +59,15 @@ public final class EventManager {
 
     private String chooseRandomEvent() {
         List<String> enabled = new ArrayList<>();
-        String configured = plugin.getConfig().getString("events.enabled-events", "meteorfall,losttreasure");
-        for (String id : configured.split(",")) {
-            String value = id.trim().toLowerCase(Locale.ROOT);
-            if (value.equals("meteorfall") || value.equals("losttreasure")) enabled.add(value);
+        int totalWeight = 0;
+        for (String id : List.of("meteorfall", "losttreasure")) {
+            if (!eventDefinitions.getBoolean(id + ".enabled", true)) continue;
+            int weight = Math.max(0, eventDefinitions.getInt(id + ".weight", 50));
+            if (weight == 0) continue;
+            totalWeight += weight;
+            for (int i = 0; i < weight; i++) enabled.add(id);
         }
-        if (enabled.isEmpty()) return null;
+        if (enabled.isEmpty() || totalWeight <= 0) return null;
         return enabled.get(ThreadLocalRandom.current().nextInt(enabled.size()));
     }
 
@@ -77,9 +86,7 @@ public final class EventManager {
         if (!plugin.getConfig().getBoolean("events.automatic", true)) return;
         if (plugin.getServer().getOnlinePlayers().size()
                 < plugin.getConfig().getInt("events.minimum-online-players", 3)) return;
-        if (--automaticCountdown <= 0) {
-            if (!start("random")) resetAutomaticCountdown();
-        }
+        if (--automaticCountdown <= 0 && !start("random")) resetAutomaticCountdown();
     }
 
     private void resetAutomaticCountdown() {
@@ -97,8 +104,17 @@ public final class EventManager {
     }
 
     public boolean claimTreasure(Player player) {
-        return activeEvent instanceof LostTreasureEvent
-                && ((LostTreasureEvent) activeEvent).claim(player);
+        return activeEvent instanceof LostTreasureEvent && ((LostTreasureEvent) activeEvent).claim(player);
+    }
+
+    public boolean isTreasureBlock(Level level, int x, int y, int z) {
+        if (!(activeEvent instanceof LostTreasureEvent treasure) || treasure.isClaimed()
+                || treasure.getLocation() == null) return false;
+        return treasure.getLocation().getLevel() == level
+                && treasure.getLocation().getX() == x
+                && treasure.getLocation().getY() + 1 == y
+                && treasure.getLocation().getZ() == z
+                && level.getBlock(x, y, z).getId() == Block.CHEST;
     }
 
     public WorldEvent getActiveEvent() { return activeEvent; }
@@ -106,6 +122,8 @@ public final class EventManager {
 
     public void reload() {
         plugin.reloadConfig();
+        eventDefinitions.reload();
+        rewards.reload();
         resetAutomaticCountdown();
     }
 

@@ -32,6 +32,23 @@ public final class RewardManager {
         }
         giveItem(player, Item.DIAMOND, base + "diamond-min", base + "diamond-max", 2, 6);
         giveItem(player, Item.EMERALD, base + "emerald-min", base + "emerald-max", 3, 8);
+        giveConfiguredBonus(player, base);
+    }
+
+    private void giveConfiguredBonus(Player player, String base) {
+        int itemId = rewards.getInt(base + "bonus-item-id", 0);
+        int damage = Math.max(0, rewards.getInt(base + "bonus-item-damage", 0));
+        int chance = Math.max(0, Math.min(100,
+                rewards.getInt(base + "bonus-item-chance-percent", 0)));
+        if (itemId <= 0 || chance == 0 || ThreadLocalRandom.current().nextInt(100) >= chance) return;
+
+        int min = clampReward(rewards.getInt(base + "bonus-item-min", 1));
+        int max = Math.max(min, clampReward(rewards.getInt(base + "bonus-item-max", min)));
+        if (max <= 0) return;
+        Item bonus = Item.get(itemId, damage, randomInclusive(min, max));
+        for (Item leftover : player.getInventory().addItem(bonus)) {
+            player.getLevel().dropItem(player, leftover);
+        }
     }
 
     private void giveItem(Player player, int itemId, String minPath, String maxPath, int defaultMin, int defaultMax) {

@@ -1,11 +1,16 @@
 package com.brunojaeger.worldevents.event.meteor;
 
 import cn.nukkit.block.Block;
+import cn.nukkit.level.Level;
+import cn.nukkit.level.format.FullChunk;
 import com.brunojaeger.worldevents.WorldEventsNK;
 import com.brunojaeger.worldevents.core.EventState;
 import com.brunojaeger.worldevents.event.WorldEvent;
 import com.brunojaeger.worldevents.world.EventLocation;
 import com.brunojaeger.worldevents.world.SafeLocationFinder;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public final class MeteorFallEvent implements WorldEvent {
     private final WorldEventsNK plugin;
@@ -26,11 +31,7 @@ public final class MeteorFallEvent implements WorldEvent {
     public boolean start() {
         state = EventState.PREPARING;
         location = locations.find(getId());
-        if (location == null) {
-            state = EventState.FAILED;
-            return false;
-        }
-        if (!createPermanentImpact()) {
+        if (location == null || !createPermanentImpact()) {
             state = EventState.FAILED;
             return false;
         }
@@ -41,54 +42,100 @@ public final class MeteorFallEvent implements WorldEvent {
         return true;
     }
 
+    /**
+     * Primero valida todo el volumen. Si un bloque no es terreno natural, el chunk no
+     * esta cargado o un proveedor deniega un punto, no se modifica ningun bloque.
+     */
     private boolean createPermanentImpact() {
+        Level level = location.getLevel();
         int radius = Math.max(2, Math.min(6, plugin.getConfig().getInt("meteorfall.radius", 4)));
-        int changed = 0;
+        int depth = Math.max(1, Math.min(5, plugin.getConfig().getInt("meteorfall.depth", 2)));
+        int maxChanges = Math.max(1,
+                plugin.getConfig().getInt("performance.max-block-changes-per-event", 150));
+        List<BlockChange> changes = new ArrayList<>();
+
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dz = -radius; dz <= radius; dz++) {
-                double distance = Math.sqrt(dx * dx + dz * dz);
-                if (distance > radius) continue;
+                int distanceSquared = dx * dx + dz * dz;
+                if (distanceSquared > radius * radius) continue;
                 int x = location.getX() + dx;
                 int z = location.getZ() + dz;
-                int y;
-                try {
-                    y = location.getLevel().getHighestBlockAt(x, z);
-                } catch (RuntimeException ignored) {
-                    continue;
+                FullChunk chunk = level.getChunkIfLoaded(x >> 4, z >> 4);
+                if (chunk == null) return reject("el area incluye chunks no cargados");
+
+                int surfaceY = chunk.getHighestBlockAt(x & 15, z & 15, false);
+                if (surfaceY <= level.getMinBlockY() + depth + 1) return reject("altura insuficiente");
+                int localDepth = Math.max(1, (int) Math.round(
+                        depth * (1.0 - Math.sqrt(distanceSquared) / (radius + 1.0))));
+
+                for (int y = surfaceY - localDepth + 1; y <= surfaceY; y++) {
+                    Block original = level.getBlock(x, y, z, false);
+                    if (original == null || !isNatural(original.getId())) {
+                        return reject("se encontro una construccion o bloque no natural");
+                    }
+                    if (!plugin.getProtectionManager().canModify(level, x, y, z, getId())) {
+                        return reject("un proveedor de proteccion denego el area");
+                    }
+                    int replacement = distanceSquared >= (radius - 1) * (radius - 1)
+                            ? Block.COBBLESTONE : Block.AIR;
+                    changes.add(new BlockChange(x, y, z, original.getId(), original.getDamage(), replacement));
+                    if (changes.size() > maxChanges) return reject("se excedio el limite de cambios");
                 }
-                if (y <= location.getLevel().getMinBlockY() + 2) continue;
-                int id = location.getLevel().getBlock(x, y, z).getId();
-                if (!isNatural(id)) continue;
-                if (!plugin.getProtectionManager().canModify(location.getLevel(), x, y, z, getId())) continue;
-                if (changed >= plugin.getConfig().getInt("performance.max-block-changes-per-event", 150)) break;
-                if (distance <= radius - 1) {
-                    location.getLevel().setBlock(x, y, z, Block.get(Block.AIR), false, true);
-                } else {
-                    location.getLevel().setBlock(x, y, z, Block.get(Block.COBBLESTONE), false, true);
-                }
-                changed++;
             }
         }
-        int centerY = location.getLevel().getHighestBlockAt(location.getX(), location.getZ());
-        if (plugin.getProtectionManager().canModify(location.getLevel(), location.getX(), centerY,
-                location.getZ(), getId())) {
-            location.getLevel().setBlock(location.getX(), Math.max(location.getLevel().getMinBlockY(), centerY - 1),
-                    location.getZ(), Block.get(Block.OBSIDIAN), false, true);
+
+        int centerX = location.getX();
+        int centerZ = location.getZ();
+        int centerSurface = level.getChunkIfLoaded(centerX >> 4, centerZ >> 4)
+                .getHighestBlockAt(centerX & 15, centerZ & 15, false);
+        int coreY = centerSurface - depth;
+        Block coreOriginal = level.getBlock(centerX, coreY, centerZ, false);
+        if (coreOriginal == null || !isNatural(coreOriginal.getId())
+                || !plugin.getProtectionManager().canModify(level, centerX, coreY, centerZ, getId())) {
+            return reject("no se puede colocar el nucleo del meteorito de forma segura");
         }
-        return changed > 0;
+        changes.add(new BlockChange(centerX, coreY, centerZ,
+                coreOriginal.getId(), coreOriginal.getDamage(), Block.OBSIDIAN));
+        if (changes.size() > maxChanges) return reject("se excedio el limite de cambios");
+
+        List<BlockChange> applied = new ArrayList<>();
+        for (BlockChange change : changes) {
+            if (!level.setBlock(change.x, change.y, change.z, Block.get(change.newId), false, true)) {
+                rollback(level, applied);
+                return reject("Nukkit no pudo aplicar todos los cambios; se revirtio el impacto");
+            }
+            applied.add(change);
+        }
+        return true;
+    }
+
+    private void rollback(Level level, List<BlockChange> applied) {
+        for (int i = applied.size() - 1; i >= 0; i--) {
+            BlockChange change = applied.get(i);
+            level.setBlock(change.x, change.y, change.z,
+                    Block.get(change.oldId, change.oldMeta), false, true);
+        }
+    }
+
+    private boolean reject(String reason) {
+        plugin.getLogger().warning("MeteorFall cancelado sin modificar el terreno: " + reason + ".");
+        return false;
     }
 
     private boolean isNatural(int id) {
         return id == Block.GRASS || id == Block.DIRT || id == Block.STONE
                 || id == Block.SAND || id == Block.GRAVEL || id == Block.NETHERRACK
-                || id == Block.END_STONE;
+                || id == Block.END_STONE || id == Block.CLAY;
     }
 
-    @Override public void tick() {
-        if (state != EventState.ACTIVE) return;
-        if (--remainingSeconds <= 0) state = EventState.COMPLETED;
+    @Override
+    public void tick() {
+        if (state == EventState.ACTIVE && --remainingSeconds <= 0) state = EventState.COMPLETED;
     }
 
     @Override public void stop() { if (state == EventState.ACTIVE) state = EventState.COMPLETED; }
     @Override public boolean isFinished() { return state == EventState.COMPLETED || state == EventState.FAILED; }
+
+    private record BlockChange(int x, int y, int z, int oldId, int oldMeta, int newId) {
+    }
 }

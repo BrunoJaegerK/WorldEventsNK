@@ -1,8 +1,8 @@
 package com.brunojaeger.worldevents.world;
 
-import cn.nukkit.Player;
 import cn.nukkit.block.Block;
 import cn.nukkit.level.Level;
+import cn.nukkit.level.format.FullChunk;
 import cn.nukkit.math.Vector3;
 import com.brunojaeger.worldevents.WorldEventsNK;
 import com.brunojaeger.worldevents.integration.protection.ProtectionManager;
@@ -13,6 +13,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
 
+/**
+ * Busca ubicaciones en mundos cargados sin solicitar generación de chunks.
+ * La distancia se calcula siempre desde el spawn del mundo, no desde un jugador
+ * aleatorio; así se respeta el rango configurado de forma consistente.
+ */
 public final class SafeLocationFinder {
     private final WorldEventsNK plugin;
     private final ProtectionManager protection;
@@ -33,53 +38,39 @@ public final class SafeLocationFinder {
         Collections.shuffle(worlds);
         if (worlds.isEmpty()) return null;
 
-        int minDistance = Math.max(0, plugin.getConfig().getInt("worlds.minimum-distance-from-spawn", 300));
-        int maxDistance = Math.max(minDistance + 1,
-                plugin.getConfig().getInt("worlds.maximum-distance-from-spawn", 3000));
-        int attempts = Math.max(1, plugin.getConfig().getInt("worlds.location-attempts-per-world", 20));
+        int minDistance = Math.max(0, Math.min(30_000_000,
+                plugin.getConfig().getInt("worlds.minimum-distance-from-spawn", 300)));
+        int maxDistance = Math.max(minDistance + 1, Math.min(30_000_000,
+                plugin.getConfig().getInt("worlds.maximum-distance-from-spawn", 3000)));
+        int attempts = Math.max(1, Math.min(500,
+                plugin.getConfig().getInt("worlds.location-attempts-per-world", 20)));
         double minDistanceSquared = (double) minDistance * minDistance;
         double maxDistanceSquared = (double) maxDistance * maxDistance;
 
         for (Level level : worlds) {
             Vector3 spawn = level.getProvider().getSpawn();
             if (spawn == null) continue;
-            List<Player> playersInWorld = new ArrayList<>();
-            for (Player player : plugin.getServer().getOnlinePlayers().values()) {
-                if (player.getLevel() == level) playersInWorld.add(player);
-            }
+
             for (int i = 0; i < attempts; i++) {
-                double anchorX;
-                double anchorZ;
-                int distanceFromAnchor;
-                if (!playersInWorld.isEmpty()) {
-                    Player anchor = playersInWorld.get(ThreadLocalRandom.current().nextInt(playersInWorld.size()));
-                    anchorX = anchor.getX();
-                    anchorZ = anchor.getZ();
-                    distanceFromAnchor = ThreadLocalRandom.current().nextInt(64, 193);
-                } else {
-                    // También se consideran mundos cargados sin jugadores, usando solo chunks de spawn ya cargados.
-                    anchorX = spawn.x;
-                    anchorZ = spawn.z;
-                    distanceFromAnchor = ThreadLocalRandom.current().nextInt(
-                            Math.max(64, minDistance), Math.max(Math.max(64, minDistance) + 1, minDistance + 129));
-                }
+                double distance = ThreadLocalRandom.current().nextDouble(minDistance, (double) maxDistance);
                 double angle = ThreadLocalRandom.current().nextDouble(0, Math.PI * 2);
-                int x = (int) Math.floor(anchorX + Math.cos(angle) * distanceFromAnchor);
-                int z = (int) Math.floor(anchorZ + Math.sin(angle) * distanceFromAnchor);
+                int x = (int) Math.floor(spawn.x + Math.cos(angle) * distance);
+                int z = (int) Math.floor(spawn.z + Math.sin(angle) * distance);
 
                 double spawnDistanceSquared = (x - spawn.x) * (double) (x - spawn.x)
                         + (z - spawn.z) * (double) (z - spawn.z);
                 if (spawnDistanceSquared < minDistanceSquared || spawnDistanceSquared > maxDistanceSquared) continue;
 
-                // Nunca fuerces la generación/carga de chunks desde el selector de ubicaciones.
-                if (!level.isChunkLoaded(x >> 4, z >> 4)) continue;
+                // getChunkIfLoaded evita que una búsqueda de evento genere terreno.
+                FullChunk chunk = level.getChunkIfLoaded(x >> 4, z >> 4);
+                if (chunk == null) continue;
 
-                int y = level.getHighestBlockAt(x, z);
+                int y = chunk.getHighestBlockAt(x & 15, z & 15, false);
                 if (y <= level.getMinBlockY() || y + 2 > level.getMaxBlockY()) continue;
-                Block surface = level.getBlock(x, y, z);
-                if (!isNaturalSurface(surface.getId())) continue;
-                if (level.getBlock(x, y + 1, z).getId() != Block.AIR
-                        || level.getBlock(x, y + 2, z).getId() != Block.AIR) continue;
+                Block surface = level.getBlock(x, y, z, false);
+                if (surface == null || !isNaturalSurface(surface.getId())) continue;
+                if (level.getBlock(x, y + 1, z, false).getId() != Block.AIR
+                        || level.getBlock(x, y + 2, z, false).getId() != Block.AIR) continue;
                 if (!protection.canModify(level, x, y, z, eventId)) continue;
                 return new EventLocation(level, x, y, z);
             }

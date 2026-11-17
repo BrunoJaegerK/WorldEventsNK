@@ -16,6 +16,10 @@ depend: [WorldEventsNK]
 Registro desde `onEnable()`:
 
 ```java
+import cn.nukkit.plugin.Plugin;
+import cn.nukkit.plugin.PluginBase;
+import com.brunojaeger.worldevents.WorldEventsNK;
+
 private WorldEventsNK worldEvents;
 
 @Override

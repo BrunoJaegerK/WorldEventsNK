@@ -107,7 +107,7 @@ public final class EventStorage {
      *         no está disponible o Nukkit no pudo completar la retirada.
      */
     public boolean removeOwnedTreasureChest(Level level, int x, int y, int z, String marker) {
-        if (level == null || level.getChunk(x >> 4, z >> 4, false) == null) return false;
+        if (level == null || level.getChunkIfLoaded(x >> 4, z >> 4) == null) return false;
         if (level.getBlock(x, y, z, false).getId() != Block.CHEST) return true;
         // Nunca se elimina un cofre que haya perdido el marcador de propiedad.
         if (!ownsTreasureChest(level, x, y, z, marker)) return true;

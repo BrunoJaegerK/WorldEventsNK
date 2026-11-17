@@ -3,6 +3,11 @@ package com.brunojaeger.worldevents.event.meteor;
 import cn.nukkit.Player;
 import cn.nukkit.block.Block;
 import cn.nukkit.level.Level;
+import cn.nukkit.level.Sound;
+import cn.nukkit.level.particle.FlameParticle;
+import cn.nukkit.level.particle.HugeExplodeParticle;
+import cn.nukkit.level.particle.SmokeParticle;
+import cn.nukkit.math.Vector3;
 import cn.nukkit.level.format.FullChunk;
 import com.brunojaeger.worldevents.WorldEventsNK;
 import com.brunojaeger.worldevents.core.EventState;
@@ -23,6 +28,7 @@ public final class MeteorFallEvent implements WorldEvent {
     private EventState state = EventState.IDLE;
     private EventLocation location;
     private int remainingSeconds;
+    private int warningDuration;
     private int coreX;
     private int coreY;
     private int coreZ;
@@ -50,12 +56,17 @@ public final class MeteorFallEvent implements WorldEvent {
         coreClaimed = false;
         remainingSeconds = Math.max(0, Math.min(120,
                 plugin.getConfig().getInt("meteorfall.warning-seconds", 10)));
+        warningDuration = remainingSeconds;
         state = EventState.PREPARING;
         plugin.getServer().broadcastMessage(plugin.getMessages().format("meteorfall-warning",
                 "{world}", location.getLevel().getName(),
                 "{x}", Integer.toString(location.getX()),
                 "{z}", Integer.toString(location.getZ()),
                 "{seconds}", Integer.toString(remainingSeconds)));
+        if (visualEffectsEnabled()) {
+            levelSound(Sound.FIREWORK_LAUNCH, 0.8f, 0.7f);
+            renderMeteorTrail(0);
+        }
         if (remainingSeconds == 0) return impact();
         return true;
     }
@@ -186,6 +197,34 @@ public final class MeteorFallEvent implements WorldEvent {
         return true;
     }
 
+    private boolean visualEffectsEnabled() {
+        return plugin.getConfig().getBoolean("meteorfall.visual-effects", true);
+    }
+
+    private void levelSound(Sound sound, float volume, float pitch) {
+        if (location != null && location.getLevel() != null) {
+            location.getLevel().addSound(new Vector3(location.getX() + 0.5,
+                    location.getY() + 1.0, location.getZ() + 0.5), sound, volume, pitch);
+        }
+    }
+
+    /** Dibuja una estela descendente de fuego y humo durante la cuenta regresiva. */
+    private void renderMeteorTrail(int elapsedSeconds) {
+        if (location == null || location.getLevel() == null) return;
+        Level level = location.getLevel();
+        double progress = warningDuration <= 0 ? 1.0
+                : Math.max(0.0, Math.min(1.0, elapsedSeconds / (double) warningDuration));
+        double y = location.getY() + 24.0 - (progress * 21.0);
+        double centerX = location.getX() + 0.5;
+        double centerZ = location.getZ() + 0.5;
+        Vector3 head = new Vector3(centerX, y, centerZ);
+        level.addParticle(new FlameParticle(head));
+        level.addParticle(new FlameParticle(new Vector3(centerX + 0.35, y - 0.4, centerZ)));
+        level.addParticle(new FlameParticle(new Vector3(centerX - 0.35, y - 0.4, centerZ)));
+        level.addParticle(new SmokeParticle(new Vector3(centerX, y - 1.0, centerZ), 2));
+        level.addParticle(new SmokeParticle(new Vector3(centerX, y - 2.0, centerZ), 2));
+    }
+
     private boolean impact() {
         if (!createPermanentImpact()) {
             state = EventState.FAILED;
@@ -194,6 +233,19 @@ public final class MeteorFallEvent implements WorldEvent {
         remainingSeconds = Math.max(30, plugin.getConfig().getInt("meteorfall.duration-seconds",
                 plugin.getConfig().getInt("events.duration-seconds", 600)));
         state = EventState.ACTIVE;
+        if (visualEffectsEnabled()) {
+            Level level = location.getLevel();
+            Vector3 impactPoint = new Vector3(location.getX() + 0.5, location.getY() + 1.0, location.getZ() + 0.5);
+            level.addParticle(new HugeExplodeParticle(impactPoint));
+            level.addSound(impactPoint, Sound.RANDOM_EXPLODE, 1.5f, 0.8f);
+            for (int i = 0; i < 12; i++) {
+                double angle = (Math.PI * 2.0 * i) / 12.0;
+                Vector3 burst = new Vector3(location.getX() + 0.5 + Math.cos(angle) * 2.0,
+                        location.getY() + 1.2, location.getZ() + 0.5 + Math.sin(angle) * 2.0);
+                level.addParticle(new FlameParticle(burst));
+                level.addParticle(new SmokeParticle(burst, 2));
+            }
+        }
         plugin.getServer().broadcastMessage(plugin.getMessages().format("event-started",
                 "{event}", "MeteorFall", "{world}", location.getLevel().getName(),
                 "{x}", Integer.toString(location.getX()), "{z}", Integer.toString(location.getZ())));
@@ -205,6 +257,7 @@ public final class MeteorFallEvent implements WorldEvent {
         if (state == EventState.PREPARING) {
             if (remainingSeconds > 0) remainingSeconds--;
             if (remainingSeconds <= 0) impact();
+            else if (visualEffectsEnabled()) renderMeteorTrail(warningDuration - remainingSeconds);
         } else if (state == EventState.ACTIVE && --remainingSeconds <= 0) {
             state = EventState.COMPLETED;
         }

@@ -43,6 +43,7 @@ Plugin de eventos dinamicos para **NukkitPetteriM1Edition (PM1E)**.
 - `/we claim` — reclamar el tesoro dentro del radio.
 - `/we stats` — estadisticas propias o totales desde consola.
 - `/we stats <jugador>` — estadisticas de un jugador conectado.
+- `/we stats top [1-10]` — clasificación persistente de los jugadores con más tesoros reclamados, incluidos los desconectados.
 - `/we reload` — recargar configuracion y mensajes.
 
 ## Datos persistentes

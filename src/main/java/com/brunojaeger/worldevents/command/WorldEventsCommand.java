@@ -61,7 +61,7 @@ public final class WorldEventsCommand {
             }
             case "claim" -> {
                 if (!(sender instanceof Player)) {
-                    sender.sendMessage(plugin.getMessages().get("player-only"));
+                    sender.sendMessage(plugin.getMessages().get("player-not-found"));
                     return true;
                 }
                 Player player = (Player) sender;

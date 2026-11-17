@@ -16,6 +16,12 @@ public final class EconomyManager {
         connect();
     }
 
+    public void reload() {
+        economy = null;
+        addMoney = null;
+        connect();
+    }
+
     private void connect() {
         if (!plugin.getConfig().getBoolean("economy.enabled", true)) return;
         try {

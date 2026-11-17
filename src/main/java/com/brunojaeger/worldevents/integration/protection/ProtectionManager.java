@@ -34,7 +34,7 @@ public final class ProtectionManager {
                 if (provider.isAvailable() && !provider.canModify(level, x, y, z, eventId)) {
                     return false;
                 }
-            } catch (Throwable error) {
+            } catch (RuntimeException | LinkageError error) {
                 plugin.getLogger().warning("El proveedor " + provider.getName()
                         + " falló al comprobar una región; se deniega la modificación por seguridad.");
                 if (plugin.getConfig().getBoolean("protection.fail-safe", true)) {

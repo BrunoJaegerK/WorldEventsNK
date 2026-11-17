@@ -95,6 +95,26 @@ public final class WorldEventsCommand {
                         + plugin.getStatisticsManager().getTotalTreasureClaims());
                 return true;
             }
+            case "stats" -> {
+                if (!sender.hasPermission("worldevents.stats")) return noPermission(sender);
+                if (args.length >= 2) {
+                    Player target = plugin.getServer().getPlayer(args[1]);
+                    if (target == null) {
+                        sender.sendMessage(plugin.getMessages().get("player-only"));
+                    } else {
+                        sender.sendMessage(plugin.getMessages().format("stats-player",
+                                "{player}", target.getName(),
+                                "{count}", Integer.toString(plugin.getStatisticsManager().getTreasureClaims(target))));
+                    }
+                } else if (sender instanceof Player player) {
+                    sender.sendMessage(plugin.getMessages().format("stats-self",
+                            "{count}", Integer.toString(plugin.getStatisticsManager().getTreasureClaims(player))));
+                } else {
+                    sender.sendMessage(plugin.getMessages().format("stats-total",
+                            "{count}", Integer.toString(plugin.getStatisticsManager().getTotalTreasureClaims())));
+                }
+                return true;
+            }
             case "reload" -> {
                 if (!sender.hasPermission("worldevents.admin")) return noPermission(sender);
                 manager.reload();

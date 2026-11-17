@@ -1,6 +1,9 @@
 package com.brunojaeger.worldevents;
 
 import cn.nukkit.plugin.PluginBase;
+import cn.nukkit.utils.Config;
+
+import java.io.File;
 import com.brunojaeger.worldevents.command.WorldEventsCommand;
 import com.brunojaeger.worldevents.core.EventManager;
 import com.brunojaeger.worldevents.core.EventScheduler;
@@ -25,7 +28,10 @@ public final class WorldEventsNK extends PluginBase {
         saveDefaultConfig();
         saveResource("events.yml", false);
         saveResource("rewards.yml", false);
+        File integrationsFile = new File(getDataFolder(), "integrations.yml");
+        boolean hadIntegrationsFile = integrationsFile.isFile();
         saveResource("integrations.yml", false);
+        if (!hadIntegrationsFile) migrateLegacyIntegrationSettings(integrationsFile);
         saveResource("lang/es_ES.yml", false);
 
         messages = new MessageUtils(this);
@@ -41,6 +47,20 @@ public final class WorldEventsNK extends PluginBase {
 
         getLogger().info("WorldEventsNK habilitado. Eventos: MeteorFall y LostTreasure.");
         getLogger().info("Protección genérica disponible; EconomyAPI es opcional.");
+    }
+
+    /** Migra los ajustes de integración de config.yml en instalaciones anteriores. */
+    private void migrateLegacyIntegrationSettings(File integrationsFile) {
+        Config integrations = new Config(integrationsFile, Config.YAML);
+        integrations.set("economy.enabled", getConfig().getBoolean("economy.enabled", true));
+        integrations.set("economy.provider", getConfig().getString("economy.provider", "EconomyAPI"));
+        integrations.set("protection.enabled", getConfig().getBoolean("protection.enabled", true));
+        integrations.set("protection.fail-safe", getConfig().getBoolean("protection.fail-safe", true));
+        if (!integrations.save()) {
+            getLogger().warning("No se pudieron migrar los ajustes antiguos de economía/protección a integrations.yml.");
+        } else {
+            getLogger().info("Ajustes de integraciones migrados desde config.yml.");
+        }
     }
 
     @Override

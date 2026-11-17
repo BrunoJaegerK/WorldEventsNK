@@ -102,11 +102,11 @@ public final class LostTreasureEvent implements WorldEvent {
         if (state != EventState.ACTIVE || claimed || !chestPlaced || location == null
                 || storage.isTreasureClaimed()) return false;
         if (player.getLevel() != location.getLevel()) return false;
-        int radius = Math.max(2, plugin.getConfig().getInt("losttreasure.claim-radius", 5));
+        int radius = Math.max(2, Math.min(1000, plugin.getConfig().getInt("losttreasure.claim-radius", 5)));
         double dx = player.getX() - (location.getX() + 0.5);
         double dy = player.getY() - (location.getY() + 1);
         double dz = player.getZ() - (location.getZ() + 0.5);
-        if (dx * dx + dy * dy + dz * dz > radius * radius) return false;
+        if (dx * dx + dy * dy + dz * dz > (double) radius * radius) return false;
 
         int chestY = location.getY() + 1;
         if (!storage.ownsTreasureChest(location.getLevel(), location.getX(), chestY,
@@ -146,7 +146,8 @@ public final class LostTreasureEvent implements WorldEvent {
     }
 
     private void sendProgressiveHint() {
-        int interval = Math.max(15, plugin.getConfig().getInt("losttreasure.hint-interval-seconds", 120));
+        int interval = Math.max(15, Math.min(86_400,
+                plugin.getConfig().getInt("losttreasure.hint-interval-seconds", 120)));
         int maximum = Math.max(0, Math.min(3, plugin.getConfig().getInt("losttreasure.maximum-hints", 3)));
         if (hintsSent >= maximum || elapsedSeconds < (hintsSent + 1) * interval) return;
 

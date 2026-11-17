@@ -5,7 +5,8 @@ import cn.nukkit.command.CommandSender;
 import com.brunojaeger.worldevents.WorldEventsNK;
 import com.brunojaeger.worldevents.core.EventManager;
 import com.brunojaeger.worldevents.event.WorldEvent;
-import com.brunojaeger.worldevents.event.treasure.LostTreasureEvent;
+
+import java.util.Locale;
 
 public final class WorldEventsCommand {
     private final WorldEventsNK plugin;
@@ -16,61 +17,69 @@ public final class WorldEventsCommand {
 
     public boolean execute(CommandSender sender, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage("§6WorldEventsNK §7| §f/we list, status, start, stop, claim, reload");
+            sender.sendMessage(plugin.getMessages().get("help"));
             return true;
         }
         EventManager manager = plugin.getEventManager();
-        switch (args[0].toLowerCase()) {
+        switch (args[0].toLowerCase(Locale.ROOT)) {
             case "list" -> {
-                sender.sendMessage("§6Eventos disponibles: §fmeteorfall, losttreasure");
+                sender.sendMessage(plugin.getMessages().get("event-list"));
                 return true;
             }
             case "status" -> {
                 WorldEvent event = manager.getActiveEvent();
-                if (event == null) sender.sendMessage("§7No hay eventos activos.");
-                else sender.sendMessage("§aEvento activo: §e" + event.getId() + " §7(" + event.getState() + ")");
+                if (event == null) sender.sendMessage(plugin.getMessages().get("status-none"));
+                else sender.sendMessage(plugin.getMessages().format("event-status",
+                        "{event}", event.getId(), "{state}", event.getState().name()));
                 return true;
             }
             case "start" -> {
                 if (!sender.hasPermission("worldevents.start")) return noPermission(sender);
                 if (args.length < 2) {
-                    sender.sendMessage("§cUso: /we start <meteorfall|losttreasure|random>");
+                    sender.sendMessage(plugin.getMessages().get("unknown-event"));
                     return true;
                 }
                 boolean started = manager.start(args[1]);
-                sender.sendMessage(started ? "§aEvento iniciado." : "§cNo se pudo iniciar. Comprueba que no exista otro evento y que haya una ubicación segura.");
+                if (!started) {
+                    sender.sendMessage(manager.hasActiveEvent()
+                            ? plugin.getMessages().get("event-already-active")
+                            : plugin.getMessages().get("no-safe-location"));
+                }
                 return true;
             }
             case "stop" -> {
                 if (!sender.hasPermission("worldevents.stop")) return noPermission(sender);
-                sender.sendMessage(manager.stop() ? "§aEvento detenido." : "§cNo hay evento activo.");
+                sender.sendMessage(manager.stop()
+                        ? plugin.getMessages().get("event-stopped")
+                        : plugin.getMessages().get("no-active-event"));
                 return true;
             }
             case "claim" -> {
                 if (!(sender instanceof Player)) {
-                    sender.sendMessage("§cEste comando solo puede ejecutarlo un jugador.");
+                    sender.sendMessage(plugin.getMessages().get("player-only"));
                     return true;
                 }
                 Player player = (Player) sender;
-                if (manager.claimTreasure(player)) return true;
-                sender.sendMessage("§cNo puedes reclamar el tesoro: no hay uno disponible o estás demasiado lejos.");
+                if (!manager.claimTreasure(player)) {
+                    sender.sendMessage(plugin.getMessages().get("treasure-too-far"));
+                }
                 return true;
             }
             case "reload" -> {
                 if (!sender.hasPermission("worldevents.admin")) return noPermission(sender);
                 manager.reload();
-                sender.sendMessage("§aConfiguración recargada.");
+                sender.sendMessage(plugin.getMessages().get("reload-success"));
                 return true;
             }
             default -> {
-                sender.sendMessage("§e/we list, /we status, /we start <evento>, /we stop, /we claim, /we reload");
+                sender.sendMessage(plugin.getMessages().get("help"));
                 return true;
             }
         }
     }
 
     private boolean noPermission(CommandSender sender) {
-        sender.sendMessage("§cNo tienes permiso para ejecutar este comando.");
+        sender.sendMessage(plugin.getMessages().get("no-permission"));
         return true;
     }
 }

@@ -2,6 +2,7 @@ package com.brunojaeger.worldevents.integration.economy;
 
 import cn.nukkit.Player;
 import cn.nukkit.plugin.Plugin;
+import cn.nukkit.plugin.Plugin;
 import com.brunojaeger.worldevents.WorldEventsNK;
 
 import java.lang.reflect.Method;

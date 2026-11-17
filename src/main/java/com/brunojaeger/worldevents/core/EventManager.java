@@ -79,11 +79,22 @@ public final class EventManager {
         List<String> candidates = new ArrayList<>();
         long totalWeight = 0L;
         for (String id : registry.getFactories().keySet()) {
-            if (!eventDefinitions.getBoolean(id + ".enabled", true)) continue;
+            if (!eventDefinitions.getBoolean(id + ".enabled", true) || getCooldownRemainingSeconds(id) > 0) continue;
             int weight = Math.max(0, eventDefinitions.getInt(id + ".weight", 50));
             if (weight == 0) continue;
             candidates.add(id);
             totalWeight += (long) weight;
+        }
+        if (totalWeight <= 0) return null;
+        if (plugin.getConfig().getBoolean("events.avoid-consecutive-same-event", true)
+                && candidates.size() > 1) {
+            String previous = history.getMostRecentlyStartedEvent();
+            if (previous != null && candidates.remove(previous)) {
+                totalWeight = 0L;
+                for (String id : candidates) {
+                    totalWeight += Math.max(0, eventDefinitions.getInt(id + ".weight", 50));
+                }
+            }
         }
         if (totalWeight <= 0) return null;
         long selection = ThreadLocalRandom.current().nextLong(totalWeight);
@@ -117,8 +128,9 @@ public final class EventManager {
             }
             if (current.isFinished()) {
                 history.record(current.getId(), current.getState() == EventState.FAILED ? "FAILED" : "COMPLETED", current.getLocation());
+                String resultKey = current.getState() == EventState.FAILED ? "event-failed" : "event-finished";
                 plugin.getServer().broadcastMessage(plugin.getMessages().format(
-                        "event-finished", "{event}", current.getId()));
+                        resultKey, "{event}", current.getId()));
                 activeEvent = null;
                 resetAutomaticCountdown();
             }
@@ -131,8 +143,10 @@ public final class EventManager {
     }
 
     private void resetAutomaticCountdown() {
-        int min = Math.max(60, plugin.getConfig().getInt("events.minimum-interval-seconds", 1800));
-        int max = Math.max(min, plugin.getConfig().getInt("events.maximum-interval-seconds", 3600));
+        int min = Math.max(60, Math.min(86_400,
+                plugin.getConfig().getInt("events.minimum-interval-seconds", 1800)));
+        int max = Math.max(min, Math.min(86_400,
+                plugin.getConfig().getInt("events.maximum-interval-seconds", 3600)));
         automaticCountdown = ThreadLocalRandom.current().nextInt(min, max + 1);
     }
 
@@ -172,6 +186,20 @@ public final class EventManager {
 
     public int getEventWeight(String id) {
         return Math.max(0, eventDefinitions.getInt(id + ".weight", 50));
+    }
+
+    public int getCooldownRemainingSeconds(String id) {
+        int cooldown = Math.max(0, Math.min(604_800,
+                eventDefinitions.getInt(id + ".cooldown-seconds", 0)));
+        if (cooldown == 0) return 0;
+        long lastStart = history.getLastStartTimestamp(id);
+        if (lastStart <= 0L) return 0;
+        long elapsed = Math.max(0L, (System.currentTimeMillis() - lastStart) / 1000L);
+        return (int) Math.max(0L, cooldown - elapsed);
+    }
+
+    public int getAutomaticCountdown() {
+        return Math.max(0, automaticCountdown);
     }
 
     public void reload() {

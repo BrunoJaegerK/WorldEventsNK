@@ -16,6 +16,7 @@ Plugin de eventos dinámicos para **NukkitPetteriM1Edition (PM1E)**.
 - Valida el volumen completo antes de cambiar bloques.
 - Rechaza volúmenes con bloques no naturales y ubicaciones denegadas por proveedores de protección.
 - Anuncia el punto de impacto con una fase de advertencia configurable (`meteorfall.warning-seconds`) para dar tiempo a los jugadores a apartarse.
+- Durante la advertencia muestra una estela descendente de fuego/humo; al impactar reproduce sonido y partículas de explosión. Se controla con `meteorfall.visual-effects`.
 - Genera un cráter permanente, con borde de roca, vetas de hierro/oro/diamante y núcleo de obsidiana.
 - El núcleo de obsidiana puede reclamarse una sola vez durante el evento mediante clic derecho; entrega recompensas independientes configuradas en `rewards.yml`.
 - Si falla una escritura durante el impacto, intenta restaurar los bloques modificados.
@@ -24,6 +25,7 @@ Plugin de eventos dinámicos para **NukkitPetteriM1Edition (PM1E)**.
 - Duración del evento configurable mediante `losttreasure.duration-seconds`.
 - Coloca un cofre con un identificador persistente propio.
 - Publica hasta tres pistas progresivas con radios independientes configurables (`hint-radius-first`, `hint-radius-second`, `hint-radius-third`); la última puede revelar las coordenadas exactas.
+- El cofre tiene un marcador de partículas y señales de sonido al aparecer y al emitirse pistas; se controla con `losttreasure.visual-effects`.
 - El primer jugador dentro del radio configurado puede reclamar la recompensa principal.
 - El cofre no puede romperse normalmente durante el evento.
 - Se elimina al reclamar, expirar o detener el evento.
@@ -37,6 +39,7 @@ Plugin de eventos dinámicos para **NukkitPetteriM1Edition (PM1E)**.
 ## Integraciones
 
 - EconomyAPI es opcional y se detecta por reflexión usando `me.onebone.economyapi.EconomyAPI`.
+- Los ajustes de integraciones se leen desde `integrations.yml`; `/we reload` vuelve a cargar economía y protección.
 - La protección de regiones usa la interfaz `RegionProtectionProvider`. Consulta [la guía para crear adaptadores](docs/PROTECTION_API.md).
 - Un plugin de protección externo debe implementar y registrar su adaptador contra su API real. No se anuncia compatibilidad automática con WorldGuard ni con otros plugins.
 - Si EconomyAPI no está disponible, se omite el dinero y se mantienen las recompensas de objetos.
@@ -59,7 +62,7 @@ Plugin de eventos dinámicos para **NukkitPetteriM1Edition (PM1E)**.
 
 - `pending-event.yml`: ubicación, fase y marcador del cofre temporal para recuperación.
 - `statistics.yml`: reclamaciones de tesoros y núcleos por UUID, más totales globales.
-- `history.yml`: historial limitado de inicios, finalizaciones, detenciones y fallos de eventos.
+- `history.yml`: historial limitado de ejecuciones; el resultado final actualiza la entrada de inicio para evitar duplicar una ejecución en `/we history`.
 - `rewards.yml`: activa/desactiva todas las recompensas, configura cantidades de diamantes/esmeraldas y dinero por evento, y permite un objeto adicional con ID, daño, probabilidad y cantidad configurables.
 - `events.yml`: habilitación, peso de selección y enfriamiento individual de cada evento.
 
@@ -72,6 +75,10 @@ La reclamación se registra en disco antes de entregar el premio para impedir du
 - `events.avoid-consecutive-same-event` evita repetir el último evento cuando existe otra opción elegible.
 - Los enfriamientos se aplican a `/we start random` y al programador automático; iniciar un evento concreto manualmente es una acción administrativa y omite ese enfriamiento.
 - El temporizador automático solo avanza cuando se alcanza el mínimo de jugadores en línea.
+
+## Pruebas
+
+La suite automatizada actual cubre el registro de eventos (`EventRegistry`). La compilación CI construye contra la rama `release` de PM1E y ejecuta Maven tests. Los escenarios de servidor que deben verificarse manualmente están en [el plan de pruebas](docs/TEST_PLAN.md); no se consideran validados solo por compilar.
 
 ## Compilación
 

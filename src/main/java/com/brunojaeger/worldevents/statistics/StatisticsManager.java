@@ -21,7 +21,9 @@ public final class StatisticsManager {
         statistics.set(path + ".name", player.getName());
         statistics.set(path + ".treasure-claims", getTreasureClaims(player) + 1);
         statistics.set("totals.treasure-claims", getTotalTreasureClaims() + 1);
-        statistics.save();
+        if (!statistics.save()) {
+            plugin.getLogger().warning("No se pudieron guardar las estadísticas de reclamación de " + player.getName() + ".");
+        }
     }
 
     public int getTreasureClaims(Player player) {

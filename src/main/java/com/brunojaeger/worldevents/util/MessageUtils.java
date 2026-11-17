@@ -29,6 +29,14 @@ public final class MessageUtils {
         return color(prefix + language.getString(key, key));
     }
 
+    public String format(String key, String... replacements) {
+        String message = get(key);
+        for (int i = 0; i + 1 < replacements.length; i += 2) {
+            message = message.replace(replacements[i], replacements[i + 1]);
+        }
+        return message;
+    }
+
     public String color(String message) {
         return message == null ? "" : message.replace('&', '§');
     }

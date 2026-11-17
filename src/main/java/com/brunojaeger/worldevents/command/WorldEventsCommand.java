@@ -75,7 +75,27 @@ public final class WorldEventsCommand {
             }
             case "stats" -> {
                 if (!sender.hasPermission("worldevents.stats")) return noPermission(sender);
-                if (args.length >= 2) {
+                if (args.length >= 2 && args[1].equalsIgnoreCase("top")) {
+                    int limit = 5;
+                    if (args.length >= 3) {
+                        try {
+                            limit = Integer.parseInt(args[2]);
+                        } catch (NumberFormatException ignored) {
+                            sender.sendMessage(plugin.getMessages().get("stats-top-usage"));
+                            return true;
+                        }
+                    }
+                    limit = Math.max(1, Math.min(10, limit));
+                    sender.sendMessage(plugin.getMessages().get("stats-top-title"));
+                    java.util.List<String> ranking = plugin.getStatisticsManager().getTopTreasureClaims(limit);
+                    if (ranking.isEmpty()) {
+                        sender.sendMessage(plugin.getMessages().get("stats-top-empty"));
+                    } else {
+                        for (String entry : ranking) {
+                            sender.sendMessage(plugin.getMessages().format("stats-top-entry", "{entry}", entry));
+                        }
+                    }
+                } else if (args.length >= 2) {
                     Player target = plugin.getServer().getPlayer(args[1]);
                     if (target == null) {
                         sender.sendMessage(plugin.getMessages().get("player-not-found"));

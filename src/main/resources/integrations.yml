@@ -1,0 +1,11 @@
+# Integraciones opcionales.
+# Los proveedores de protección se registran mediante la API pública
+# RegionProtectionProvider; WorldEventsNK no presupone clases de otros plugins.
+protection:
+  enabled: true
+  fail-safe: true
+
+economy:
+  enabled: true
+  provider: EconomyAPI
+  class: me.onebone.economyapi.EconomyAPI

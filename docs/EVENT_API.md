@@ -49,4 +49,4 @@ my-event:
   cooldown-seconds: 3600
 ```
 
-Los eventos externos deben respetar las protecciones de regiones y validar las ubicaciones/bloques antes de modificar el mundo. El ciclo de vida de sus estructuras temporales y su persistencia son responsabilidad del plugin que los registra.
+Los eventos externos deben respetar las protecciones de regiones y validar las ubicaciones/bloques antes de modificar el mundo. Pueden consultar `worldEvents.getProtectionManager().canModify(...)` y registrar sus propios `RegionProtectionProvider` si necesitan integrar otra protección. El ciclo de vida de sus estructuras temporales y su persistencia son responsabilidad del plugin que los registra.

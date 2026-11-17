@@ -40,7 +40,6 @@ Plugin de eventos dinamicos para **NukkitPetteriM1Edition (PM1E)**.
 - `/we` — ayuda.
 - `/we list` — eventos registrados, estado habilitado/deshabilitado, peso aleatorio y enfriamiento restante.
 - `/we status` — evento activo o cuenta regresiva del siguiente intento automático.
-- `/we status` — evento activo.
 - `/we history [1-10]` — historial persistente de los últimos eventos con resultado, fecha y ubicación.
 - `/we start <meteorfall|losttreasure|random>` — iniciar un evento.
 - `/we stop` — detener el evento.

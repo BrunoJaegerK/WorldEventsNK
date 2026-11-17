@@ -15,6 +15,7 @@ Plugin de eventos dinamicos para **NukkitPetteriM1Edition (PM1E)**.
 - Muestrea el rango completo de distancia al spawn y solo evalua chunks que ya estan cargados; nunca genera terreno para buscar ubicaciones.
 - Valida el volumen completo antes de cambiar bloques.
 - Rechaza volumenes con bloques no naturales y ubicaciones denegadas por proveedores de proteccion.
+- Anuncia el punto de impacto con una fase de advertencia configurable (`meteorfall.warning-seconds`) para dar tiempo a los jugadores a apartarse.
 - Genera un crater permanente, con borde de roca, vetas de hierro/oro/diamante y nucleo de obsidiana.
 - Si falla una escritura durante el impacto, intenta restaurar los bloques modificados.
 

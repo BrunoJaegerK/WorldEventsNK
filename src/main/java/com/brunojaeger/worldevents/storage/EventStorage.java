@@ -82,7 +82,7 @@ public final class EventStorage {
 
     public boolean ownsTreasureChest(Level level, int x, int y, int z, String marker) {
         if (level == null || marker == null || !pending.getBoolean("treasure.active", false)) return false;
-        if (!level.isChunkLoaded(x >> 4, z >> 4)) return false;
+        if (level.getChunk(x >> 4, z >> 4, false) == null) return false;
         if (level.getBlock(x, y, z, false).getId() != Block.CHEST) return false;
         BlockEntity entity = level.getBlockEntity(new Vector3(x, y, z));
         return entity instanceof BlockEntityChest chest && chest.hasName() && marker.equals(chest.getName())

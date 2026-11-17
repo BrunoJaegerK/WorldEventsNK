@@ -76,8 +76,18 @@ public final class MeteorFallEvent implements WorldEvent {
                     if (!plugin.getProtectionManager().canModify(level, x, y, z, getId())) {
                         return reject("un proveedor de proteccion denego el area");
                     }
-                    int replacement = distanceSquared >= (radius - 1) * (radius - 1)
-                            ? Block.COBBLESTONE : Block.AIR;
+                    int replacement;
+                    if (distanceSquared >= (radius - 1) * (radius - 1)) {
+                        replacement = Block.COBBLESTONE;
+                    } else if (y == surfaceY - localDepth + 1 && dx == 1 && dz == 0) {
+                        replacement = Block.DIAMOND_ORE;
+                    } else if (y == surfaceY - localDepth + 1 && dx == -1 && dz == 0) {
+                        replacement = Block.GOLD_ORE;
+                    } else if (y == surfaceY - localDepth + 1 && dx == 0 && dz == 1) {
+                        replacement = Block.IRON_ORE;
+                    } else {
+                        replacement = Block.AIR;
+                    }
                     changes.add(new BlockChange(x, y, z, original.getId(), original.getDamage(), replacement));
                     if (changes.size() > maxChanges) return reject("se excedio el limite de cambios");
                 }

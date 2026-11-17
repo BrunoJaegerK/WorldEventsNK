@@ -19,6 +19,7 @@ worlds:
 
 meteorfall:
   warning-seconds: 10
+  visual-effects: true
   duration-seconds: 600
   radius: 4
   depth: 2

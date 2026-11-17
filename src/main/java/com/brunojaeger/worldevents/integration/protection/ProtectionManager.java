@@ -31,7 +31,15 @@ public final class ProtectionManager {
         }
         for (RegionProtectionProvider provider : providers) {
             try {
-                if (provider.isAvailable() && !provider.canModify(level, x, y, z, eventId)) {
+                if (!provider.isAvailable()) {
+                    if (plugin.getConfig().getBoolean("protection.fail-safe", true)) {
+                        plugin.getLogger().warning("El proveedor " + provider.getName()
+                                + " no está disponible; se deniega la modificación por seguridad.");
+                        return false;
+                    }
+                    continue;
+                }
+                if (!provider.canModify(level, x, y, z, eventId)) {
                     return false;
                 }
             } catch (RuntimeException | LinkageError error) {

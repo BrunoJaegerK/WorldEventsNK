@@ -50,8 +50,19 @@ public final class EventManager {
                 || !eventDefinitions.getBoolean(normalized + ".enabled", true)) return false;
 
         WorldEvent event = registry.create(normalized);
-        if (event == null || !event.start()) {
-            plugin.getLogger().warning("No se pudo iniciar " + normalized + ": no se encontró una ubicación válida.");
+        if (event == null) return false;
+        try {
+            if (!event.start()) {
+                plugin.getLogger().warning("No se pudo iniciar " + normalized + ": no se encontró una ubicación válida.");
+                return false;
+            }
+        } catch (RuntimeException error) {
+            try {
+                event.stop();
+            } catch (RuntimeException cleanupError) {
+                plugin.getLogger().error("Falló la limpieza tras un error al iniciar " + normalized + ".", cleanupError);
+            }
+            plugin.getLogger().error("Excepción al iniciar el evento " + normalized + ".", error);
             return false;
         }
         activeEvent = event;

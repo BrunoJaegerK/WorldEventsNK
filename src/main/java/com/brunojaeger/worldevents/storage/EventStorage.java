@@ -1,11 +1,8 @@
 package com.brunojaeger.worldevents.storage;
 
 import cn.nukkit.block.Block;
-import cn.nukkit.blockentity.BlockEntity;
-import cn.nukkit.blockentity.BlockEntityChest;
 import cn.nukkit.level.Level;
 import cn.nukkit.level.format.generic.BaseFullChunk;
-import cn.nukkit.math.Vector3;
 import cn.nukkit.utils.Config;
 import com.brunojaeger.worldevents.WorldEventsNK;
 
@@ -13,8 +10,8 @@ import java.io.File;
 import java.util.UUID;
 
 /**
- * Persiste la propiedad del cofre temporal para poder retirarlo despues de un cierre abrupto.
- * Solo elimina cofres que tengan el marcador propio del evento.
+ * Persiste la propiedad y el estado del cofre para recuperar eventos interrumpidos.
+ * El cofre se identifica por mundo y coordenadas: durante el evento su rotura esta cancelada.
  */
 public final class EventStorage {
     private final WorldEventsNK plugin;
@@ -62,15 +59,13 @@ public final class EventStorage {
 
     public boolean ownsTreasureChest(Level level, int x, int y, int z, String marker) {
         if (level == null || marker == null || !level.isChunkLoaded(x >> 4, z >> 4)) return false;
-        if (level.getBlock(x, y, z, false).getId() != Block.CHEST) return false;
-        BlockEntity entity = level.getBlockEntity(new Vector3(x, y, z));
-        return entity instanceof BlockEntityChest chest && chest.hasName() && marker.equals(chest.getName());
+        return level.getBlock(x, y, z, false).getId() == Block.CHEST
+                && pending.getBoolean("treasure.active", false)
+                && marker.equals(pending.getString("treasure.marker", ""));
     }
 
     public void removeOwnedTreasureChest(Level level, int x, int y, int z, String marker) {
         if (!ownsTreasureChest(level, x, y, z, marker)) return;
-        BlockEntity entity = level.getBlockEntity(new Vector3(x, y, z));
-        if (entity != null) entity.close();
         level.setBlock(x, y, z, Block.get(Block.AIR), false, true);
     }
 
@@ -85,22 +80,20 @@ public final class EventStorage {
         Level level = plugin.getServer().getLevelByName(worldName);
         if (level == null) {
             plugin.getLogger().warning("Hay una limpieza pendiente en el mundo '" + worldName
-                    + "', que no esta cargado. Se conservara el registro.");
+                    + "', que no está cargado. Se conservará el registro.");
             return;
         }
-        BaseFullChunk chunk = level.getChunk(x >> 4, z >> 4, false);
+        BaseFullChunk chunk = level.getChunk(x >> 4, z >> 4, true);
         if (chunk == null) {
-            plugin.getLogger().warning("No se pudo cargar el chunk del cofre pendiente; se reintentara en otro inicio.");
+            plugin.getLogger().warning("No se pudo cargar el chunk del cofre pendiente; se reintentará en otro inicio.");
             return;
         }
 
         boolean placingPhase = "placing".equalsIgnoreCase(pending.getString("treasure.phase", ""));
         boolean matchingMarker = ownsTreasureChest(level, x, y, z, marker);
         if (level.getBlock(x, y, z, false).getId() == Block.CHEST && (placingPhase || matchingMarker)) {
-            BlockEntity entity = level.getBlockEntity(new Vector3(x, y, z));
-            if (entity != null) entity.close();
             level.setBlock(x, y, z, Block.get(Block.AIR), false, true);
-            plugin.getLogger().info("Se retiro un cofre de evento pendiente tras recuperar el estado anterior.");
+            plugin.getLogger().info("Se retiró un cofre de evento pendiente tras recuperar el estado anterior.");
         }
         clearTreasure();
     }

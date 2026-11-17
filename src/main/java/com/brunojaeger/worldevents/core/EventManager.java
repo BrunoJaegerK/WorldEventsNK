@@ -191,6 +191,7 @@ public final class EventManager {
     public WorldEvent getActiveEvent() { return activeEvent; }
     public boolean hasActiveEvent() { return activeEvent != null; }
     public EventRegistry getRegistry() { return registry; }
+    public EconomyManager getEconomyManager() { return economy; }
 
     public boolean isEventEnabled(String id) {
         return plugin.getConfig().getBoolean("events.enabled", true)

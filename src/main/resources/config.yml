@@ -1,0 +1,46 @@
+settings:
+  language: es_ES
+  debug: false
+
+events:
+  enabled: true
+  automatic: true
+  minimum-online-players: 3
+  minimum-interval-seconds: 1800
+  maximum-interval-seconds: 3600
+  maximum-active-events: 1
+  duration-seconds: 600
+  enabled-events: "meteorfall,losttreasure"
+
+worlds:
+  mode: ALL_LOADED
+  excluded: "lobby,minigames"
+  require-loaded-world: true
+  minimum-distance-from-spawn: 300
+  maximum-distance-from-spawn: 3000
+  minimum-distance-between-events: 500
+  location-attempts-per-world: 20
+
+meteorfall:
+  radius: 4
+  minimum-natural-block-ratio: 0.75
+  place-guardians: false
+
+losttreasure:
+  claim-radius: 5
+  hint-interval-seconds: 120
+  maximum-hints: 3
+
+economy:
+  enabled: true
+  provider: EconomyAPI
+  continue-without-provider: true
+
+protection:
+  enabled: true
+  fail-safe: true
+
+performance:
+  max-block-changes-per-event: 150
+  cleanup-on-disable: true
+  scheduler-period-ticks: 20

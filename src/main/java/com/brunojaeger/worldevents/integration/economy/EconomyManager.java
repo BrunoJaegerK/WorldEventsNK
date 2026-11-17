@@ -78,7 +78,7 @@ public final class EconomyManager {
     }
 
     public boolean deposit(Player player, double amount) {
-        if (player == null || !player.isOnline() || !Double.isFinite(amount) || amount <= 0) return false;
+        if (!enabled() || player == null || !player.isOnline() || !Double.isFinite(amount) || amount <= 0) return false;
         EconomyProvider provider = externalProvider;
         if (provider != null) {
             try {
@@ -105,6 +105,7 @@ public final class EconomyManager {
     }
 
     public boolean isAvailable() {
+        if (!enabled()) return false;
         EconomyProvider provider = externalProvider;
         if (provider != null) {
             try {

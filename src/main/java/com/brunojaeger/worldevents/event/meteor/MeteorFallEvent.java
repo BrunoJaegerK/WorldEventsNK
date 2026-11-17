@@ -163,6 +163,7 @@ public final class MeteorFallEvent implements WorldEvent {
     @Override public void stop() { if (state == EventState.ACTIVE) state = EventState.COMPLETED; }
     @Override public boolean isFinished() { return state == EventState.COMPLETED || state == EventState.FAILED; }
     @Override public int getRemainingSeconds() { return Math.max(0, remainingSeconds); }
+    @Override public EventLocation getLocation() { return location; }
 
     private record BlockChange(int x, int y, int z, int oldId, int oldMeta, int newId) {
     }

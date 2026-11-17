@@ -10,10 +10,12 @@ import java.io.File;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class RewardManager {
+    private final WorldEventsNK plugin;
     private final EconomyManager economy;
     private final Config rewards;
 
     public RewardManager(WorldEventsNK plugin, EconomyManager economy) {
+        this.plugin = plugin;
         this.economy = economy;
         this.rewards = new Config(new File(plugin.getDataFolder(), "rewards.yml"), Config.YAML);
     }
@@ -23,15 +25,22 @@ public final class RewardManager {
     }
 
     public void give(String eventId, Player player) {
-        if (!rewards.getBoolean("enabled", true) || !"losttreasure".equals(eventId)) return;
+        if (!rewards.getBoolean("enabled", true) || player == null || !player.isOnline()) return;
+        if (!"losttreasure".equals(eventId) && !"meteorfall".equals(eventId)) return;
         String base = eventId + ".";
         int minMoney = clampReward(rewards.getInt(base + "money-min", 0));
         int maxMoney = Math.max(minMoney, clampReward(rewards.getInt(base + "money-max", minMoney)));
         if (maxMoney > 0 && economy.isAvailable()) {
             economy.deposit(player, randomInclusive(minMoney, maxMoney));
         }
-        giveItem(player, Item.DIAMOND, base + "diamond-min", base + "diamond-max", 2, 6);
-        giveItem(player, Item.EMERALD, base + "emerald-min", base + "emerald-max", 3, 8);
+        int defaultDiamondMin = "meteorfall".equals(eventId) ? 1 : 2;
+        int defaultDiamondMax = "meteorfall".equals(eventId) ? 2 : 6;
+        int defaultEmeraldMin = "meteorfall".equals(eventId) ? 0 : 3;
+        int defaultEmeraldMax = "meteorfall".equals(eventId) ? 1 : 8;
+        giveItem(player, Item.DIAMOND, base + "diamond-min", base + "diamond-max",
+                defaultDiamondMin, defaultDiamondMax);
+        giveItem(player, Item.EMERALD, base + "emerald-min", base + "emerald-max",
+                defaultEmeraldMin, defaultEmeraldMax);
         giveConfiguredBonus(player, base);
     }
 
@@ -45,19 +54,23 @@ public final class RewardManager {
         int min = clampReward(rewards.getInt(base + "bonus-item-min", 1));
         int max = Math.max(min, clampReward(rewards.getInt(base + "bonus-item-max", min)));
         if (max <= 0) return;
-        Item bonus = Item.get(itemId, damage, randomInclusive(min, max));
-        for (Item leftover : player.getInventory().addItem(bonus)) {
-            player.getLevel().dropItem(player, leftover);
-        }
+        giveItemStack(player, Item.get(itemId, damage, randomInclusive(min, max)));
     }
 
-    private void giveItem(Player player, int itemId, String minPath, String maxPath, int defaultMin, int defaultMax) {
+    private void giveItem(Player player, int itemId, String minPath, String maxPath,
+                          int defaultMin, int defaultMax) {
         int min = clampReward(rewards.getInt(minPath, defaultMin));
         int max = Math.max(min, clampReward(rewards.getInt(maxPath, defaultMax)));
-        if (max > 0) {
-            Item reward = Item.get(itemId, 0, randomInclusive(min, max));
-            for (Item leftover : player.getInventory().addItem(reward)) {
-                player.getLevel().dropItem(player, leftover);
+        if (max <= 0) return;
+        giveItemStack(player, Item.get(itemId, 0, randomInclusive(min, max)));
+    }
+
+    private void giveItemStack(Player player, Item item) {
+        if (item == null || item.getId() == 0 || item.getCount() <= 0) return;
+        Item[] leftovers = player.getInventory().addItem(item);
+        for (Item leftover : leftovers) {
+            if (leftover != null && leftover.getId() != 0 && leftover.getCount() > 0) {
+                player.getLevel().dropItem(player.getPosition(), leftover);
             }
         }
     }

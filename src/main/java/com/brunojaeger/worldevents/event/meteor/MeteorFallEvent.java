@@ -31,16 +31,19 @@ public final class MeteorFallEvent implements WorldEvent {
     public boolean start() {
         state = EventState.PREPARING;
         location = locations.find(getId());
-        if (location == null || !createPermanentImpact()) {
+        if (location == null) {
             state = EventState.FAILED;
             return false;
         }
-        remainingSeconds = Math.max(30, plugin.getConfig().getInt("meteorfall.duration-seconds",
-                plugin.getConfig().getInt("events.duration-seconds", 600)));
-        state = EventState.ACTIVE;
-        plugin.getServer().broadcastMessage(plugin.getMessages().format("event-started",
-                "{event}", "MeteorFall", "{world}", location.getLevel().getName(),
-                "{x}", Integer.toString(location.getX()), "{z}", Integer.toString(location.getZ())));
+        remainingSeconds = Math.max(0, Math.min(120,
+                plugin.getConfig().getInt("meteorfall.warning-seconds", 10)));
+        state = EventState.PREPARING;
+        plugin.getServer().broadcastMessage(plugin.getMessages().format("meteorfall-warning",
+                "{world}", location.getLevel().getName(),
+                "{x}", Integer.toString(location.getX()),
+                "{z}", Integer.toString(location.getZ()),
+                "{seconds}", Integer.toString(remainingSeconds)));
+        if (remainingSeconds == 0) return impact();
         return true;
     }
 
@@ -155,12 +158,33 @@ public final class MeteorFallEvent implements WorldEvent {
                 || id == Block.END_STONE || id == Block.CLAY_BLOCK;
     }
 
-    @Override
-    public void tick() {
-        if (state == EventState.ACTIVE && --remainingSeconds <= 0) state = EventState.COMPLETED;
+    private boolean impact() {
+        if (!createPermanentImpact()) {
+            state = EventState.FAILED;
+            return false;
+        }
+        remainingSeconds = Math.max(30, plugin.getConfig().getInt("meteorfall.duration-seconds",
+                plugin.getConfig().getInt("events.duration-seconds", 600)));
+        state = EventState.ACTIVE;
+        plugin.getServer().broadcastMessage(plugin.getMessages().format("event-started",
+                "{event}", "MeteorFall", "{world}", location.getLevel().getName(),
+                "{x}", Integer.toString(location.getX()), "{z}", Integer.toString(location.getZ())));
+        return true;
     }
 
-    @Override public void stop() { if (state == EventState.ACTIVE) state = EventState.COMPLETED; }
+    @Override
+    public void tick() {
+        if (state == EventState.PREPARING) {
+            if (remainingSeconds > 0) remainingSeconds--;
+            if (remainingSeconds <= 0) impact();
+        } else if (state == EventState.ACTIVE && --remainingSeconds <= 0) {
+            state = EventState.COMPLETED;
+        }
+    }
+
+    @Override public void stop() {
+        if (state == EventState.ACTIVE || state == EventState.PREPARING) state = EventState.COMPLETED;
+    }
     @Override public boolean isFinished() { return state == EventState.COMPLETED || state == EventState.FAILED; }
     @Override public int getRemainingSeconds() { return Math.max(0, remainingSeconds); }
     @Override public EventLocation getLocation() { return location; }

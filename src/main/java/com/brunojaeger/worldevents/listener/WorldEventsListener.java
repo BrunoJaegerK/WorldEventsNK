@@ -4,6 +4,7 @@ import cn.nukkit.event.EventHandler;
 import cn.nukkit.event.Listener;
 import cn.nukkit.event.block.BlockBreakEvent;
 import cn.nukkit.event.player.PlayerInteractEvent;
+import cn.nukkit.event.level.ChunkLoadEvent;
 import com.brunojaeger.worldevents.WorldEventsNK;
 
 public final class WorldEventsListener implements Listener {
@@ -11,6 +12,11 @@ public final class WorldEventsListener implements Listener {
 
     public WorldEventsListener(WorldEventsNK plugin) {
         this.plugin = plugin;
+    }
+
+    @EventHandler
+    public void onPendingTreasureChunkLoad(ChunkLoadEvent event) {
+        plugin.getEventStorage().recoverIfChunk(event.getChunk());
     }
 
     @EventHandler

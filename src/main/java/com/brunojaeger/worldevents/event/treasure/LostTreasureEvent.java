@@ -2,11 +2,6 @@ package com.brunojaeger.worldevents.event.treasure;
 
 import cn.nukkit.Player;
 import cn.nukkit.block.Block;
-import cn.nukkit.blockentity.BlockEntity;
-import cn.nukkit.blockentity.BlockEntityChest;
-import cn.nukkit.level.format.generic.BaseFullChunk;
-import cn.nukkit.nbt.tag.CompoundTag;
-import cn.nukkit.math.Vector3;
 import com.brunojaeger.worldevents.WorldEventsNK;
 import com.brunojaeger.worldevents.core.EventState;
 import com.brunojaeger.worldevents.event.WorldEvent;
@@ -24,12 +19,12 @@ public final class LostTreasureEvent implements WorldEvent {
     private final StatisticsManager statistics;
     private EventState state = EventState.IDLE;
     private EventLocation location;
+    private String storageMarker;
     private int remainingSeconds;
     private int elapsedSeconds;
     private int hintsSent;
     private boolean claimed;
     private boolean chestPlaced;
-    private String chestMarker;
 
     public LostTreasureEvent(WorldEventsNK plugin, SafeLocationFinder locations, RewardManager rewards,
                              EventStorage storage, StatisticsManager statistics) {
@@ -51,7 +46,6 @@ public final class LostTreasureEvent implements WorldEvent {
             state = EventState.FAILED;
             return false;
         }
-
         int chestY = location.getY() + 1;
         if (location.getLevel().getBlock(location.getX(), chestY, location.getZ(), false).getId() != Block.AIR
                 || !plugin.getProtectionManager().canModify(location.getLevel(), location.getX(), chestY,
@@ -60,61 +54,28 @@ public final class LostTreasureEvent implements WorldEvent {
             return false;
         }
 
-        chestMarker = storage.beginTreasure(location.getLevel(), location.getX(), chestY, location.getZ());
-        if (chestMarker == null) {
+        storageMarker = storage.beginTreasure(location.getLevel(), location.getX(), chestY, location.getZ());
+        if (storageMarker == null) {
             state = EventState.FAILED;
-            plugin.getLogger().warning("No se pudo guardar el registro de limpieza del tesoro.");
             return false;
         }
-
-        if (!location.getLevel().setBlock(location.getX(), chestY, location.getZ(),
-                Block.get(Block.CHEST), false, true)) {
+        chestPlaced = location.getLevel().setBlock(location.getX(), chestY, location.getZ(),
+                Block.get(Block.CHEST), false, true);
+        if (!chestPlaced || !storage.markTreasureActive()) {
+            if (chestPlaced) {
+                location.getLevel().setBlock(location.getX(), chestY, location.getZ(),
+                        Block.get(Block.AIR), false, true);
+            }
             storage.clearTreasure();
+            chestPlaced = false;
             state = EventState.FAILED;
             return false;
         }
 
-        BaseFullChunk chunk = location.getLevel().getChunkIfLoaded(location.getX() >> 4, location.getZ() >> 4);
-        if (chunk == null) {
-            location.getLevel().setBlock(location.getX(), chestY, location.getZ(), Block.get(Block.AIR), false, true);
-            storage.clearTreasure();
-            state = EventState.FAILED;
-            return false;
-        }
-
-        BlockEntity entity = location.getLevel().getBlockEntity(new Vector3(location.getX(), chestY, location.getZ()));
-        if (entity == null) {
-            CompoundTag nbt = new CompoundTag()
-                    .putString("id", BlockEntity.CHEST)
-                    .putInt("x", location.getX())
-                    .putInt("y", chestY)
-                    .putInt("z", location.getZ());
-            entity = BlockEntity.createBlockEntity(BlockEntity.CHEST, chunk, nbt);
-        }
-        if (!(entity instanceof BlockEntityChest chest)) {
-            if (entity != null) entity.close();
-            location.getLevel().setBlock(location.getX(), chestY, location.getZ(), Block.get(Block.AIR), false, true);
-            storage.clearTreasure();
-            state = EventState.FAILED;
-            plugin.getLogger().warning("PM1E no pudo crear el block entity del cofre del evento.");
-            return false;
-        }
-
-        chest.setName(chestMarker);
-        chest.saveNBT();
-        if (!storage.markTreasureActive()) {
-            chest.close();
-            location.getLevel().setBlock(location.getX(), chestY, location.getZ(), Block.get(Block.AIR), false, true);
-            storage.clearTreasure();
-            state = EventState.FAILED;
-            return false;
-        }
-
-        chestPlaced = true;
         remainingSeconds = Math.max(30, plugin.getConfig().getInt("events.duration-seconds", 600));
         state = EventState.ACTIVE;
-        plugin.getServer().broadcastMessage("§6[WorldEvents] §e¡Se ha escondido un tesoro en "
-                + location.getLevel().getName() + "§e! Busca pistas con §f/we claim§e.");
+        plugin.getServer().broadcastMessage(plugin.getMessages().format("treasure-announcement",
+                "{world}", location.getLevel().getName()));
         return true;
     }
 
@@ -130,18 +91,16 @@ public final class LostTreasureEvent implements WorldEvent {
 
         int chestY = location.getY() + 1;
         if (!storage.ownsTreasureChest(location.getLevel(), location.getX(), chestY,
-                location.getZ(), chestMarker)) return false;
+                location.getZ(), storageMarker)) return false;
 
-        // Persistir la reclamacion antes de entregar premios: evita duplicaciones tras un crash.
-        if (!storage.markTreasureClaimed()) {
-            plugin.getLogger().warning("No se pudo persistir la reclamacion del tesoro; se cancela el pago.");
-            return false;
-        }
+        // Persistir la reclamación antes de pagar: ante un cierre abrupto no se duplicará.
+        if (!storage.markTreasureClaimed()) return false;
         claimed = true;
-        rewards.give(getId(), player);
         statistics.recordTreasureClaim(player);
-        player.sendMessage("§aHas reclamado el tesoro perdido.");
-        storage.removeOwnedTreasureChest(location.getLevel(), location.getX(), chestY, location.getZ(), chestMarker);
+        rewards.give(getId(), player);
+        player.sendMessage(plugin.getMessages().get("treasure-claimed"));
+        storage.removeOwnedTreasureChest(location.getLevel(), location.getX(), chestY,
+                location.getZ(), storageMarker);
         chestPlaced = false;
         storage.clearTreasure();
         state = EventState.COMPLETED;
@@ -170,12 +129,14 @@ public final class LostTreasureEvent implements WorldEvent {
             case 1 -> 24;
             default -> 0;
         };
-        String hint = offset == 0
-                ? location.getX() + ", " + location.getZ()
-                : "X " + (location.getX() - offset) + " a " + (location.getX() + offset)
+        String hint;
+        if (offset == 0) {
+            hint = location.getX() + ", " + location.getZ();
+        } else {
+            hint = "X " + (location.getX() - offset) + " a " + (location.getX() + offset)
                     + ", Z " + (location.getZ() - offset) + " a " + (location.getZ() + offset);
-        plugin.getServer().broadcastMessage(plugin.getMessages().get("treasure-hint")
-                .replace("{hint}", hint));
+        }
+        plugin.getServer().broadcastMessage(plugin.getMessages().format("treasure-hint", "{hint}", hint));
         hintsSent++;
     }
 
@@ -185,15 +146,10 @@ public final class LostTreasureEvent implements WorldEvent {
             return;
         }
         int y = location.getY() + 1;
-        storage.removeOwnedTreasureChest(location.getLevel(), location.getX(), y, location.getZ(), chestMarker);
+        storage.removeOwnedTreasureChest(location.getLevel(), location.getX(), y,
+                location.getZ(), storageMarker);
         chestPlaced = false;
         storage.clearTreasure();
-    }
-
-    public boolean ownsChest(cn.nukkit.level.Level level, int x, int y, int z) {
-        return chestPlaced && !claimed && location != null && location.getLevel() == level
-                && location.getX() == x && location.getY() + 1 == y && location.getZ() == z
-                && storage.ownsTreasureChest(level, x, y, z, chestMarker);
     }
 
     @Override public void stop() {
@@ -205,6 +161,6 @@ public final class LostTreasureEvent implements WorldEvent {
         return state == EventState.COMPLETED || state == EventState.FAILED;
     }
 
-    public boolean isClaimed() { return claimed || storage.isTreasureClaimed(); }
+    public boolean isClaimed() { return claimed; }
     public EventLocation getLocation() { return location; }
 }

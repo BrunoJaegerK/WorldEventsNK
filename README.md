@@ -29,7 +29,7 @@ Plugin de eventos dinamicos para **NukkitPetteriM1Edition (PM1E)**.
 ## Integraciones
 
 - EconomyAPI es opcional y se detecta por reflexion usando `me.onebone.economyapi.EconomyAPI`.
-- La proteccion de regiones usa la interfaz `RegionProtectionProvider`.
+- La proteccion de regiones usa la interfaz `RegionProtectionProvider`. Consulta [la guía para crear adaptadores](docs/PROTECTION_API.md).
 - Un plugin de proteccion externo debe implementar y registrar su adaptador contra su API real. No se anuncia compatibilidad automatica con WorldGuard ni con otros plugins.
 - Si EconomyAPI no esta disponible, se omite el dinero y se mantienen las recompensas de objetos.
 

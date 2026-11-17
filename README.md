@@ -66,5 +66,5 @@ El JAR se genera en `target/WorldEventsNK.jar`. GitHub Actions construye primero
 
 - MeteorFall modifica el mundo permanentemente. Excluye los mundos donde no quieras crateres.
 - La proteccion generica solo puede respetar regiones de terceros cuando existe un adaptador registrado para ese plugin.
-- Los eventos automaticos buscan ubicaciones en chunks cargados dentro de los mundos que tienen jugadores conectados.
+- La seleccion considera todos los mundos cargados y no excluidos. Usa jugadores como referencia cuando los hay y el spawn en mundos sin jugadores; nunca fuerza la generacion de chunks.
 - No se ha validado aun el comportamiento visual y de juego dentro de una instancia real de servidor; la compilacion automatizada valida compatibilidad de codigo/API, no una prueba de gameplay.

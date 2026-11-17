@@ -11,9 +11,7 @@ import java.util.Locale;
 public final class WorldEventsCommand {
     private final WorldEventsNK plugin;
 
-    public WorldEventsCommand(WorldEventsNK plugin) {
-        this.plugin = plugin;
-    }
+    public WorldEventsCommand(WorldEventsNK plugin) { this.plugin = plugin; }
 
     public boolean execute(CommandSender sender, String[] args) {
         if (args.length == 0) {
@@ -75,22 +73,25 @@ public final class WorldEventsCommand {
             }
             case "stats" -> {
                 if (!sender.hasPermission("worldevents.stats")) return noPermission(sender);
+                Player target;
                 if (args.length >= 2) {
-                    Player target = plugin.getServer().getPlayer(args[1]);
+                    target = plugin.getServer().getPlayer(args[1]);
                     if (target == null) {
                         sender.sendMessage(plugin.getMessages().get("player-not-found"));
-                    } else {
-                        sender.sendMessage(plugin.getMessages().format("stats-player",
-                                "{player}", target.getName(),
-                                "{count}", Integer.toString(plugin.getStatisticsManager().getTreasureClaims(target))));
+                        return true;
                     }
                 } else if (sender instanceof Player player) {
-                    sender.sendMessage(plugin.getMessages().format("stats-self",
-                            "{count}", Integer.toString(plugin.getStatisticsManager().getTreasureClaims(player))));
+                    target = player;
                 } else {
                     sender.sendMessage(plugin.getMessages().format("stats-total",
-                            "{count}", Integer.toString(plugin.getStatisticsManager().getTotalTreasureClaims())));
+                            "{treasure}", Integer.toString(plugin.getStatisticsManager().getTotalTreasureClaims()),
+                            "{meteor}", Integer.toString(plugin.getStatisticsManager().getTotalMeteorClaims())));
+                    return true;
                 }
+                sender.sendMessage(plugin.getMessages().format("stats-player",
+                        "{player}", target.getName(),
+                        "{treasure}", Integer.toString(plugin.getStatisticsManager().getTreasureClaims(target)),
+                        "{meteor}", Integer.toString(plugin.getStatisticsManager().getMeteorClaims(target))));
                 return true;
             }
             case "reload" -> {

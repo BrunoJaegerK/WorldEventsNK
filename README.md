@@ -1,70 +1,51 @@
 # WorldEventsNK
 
-Plugin de eventos dinamicos para **NukkitPetteriM1Edition (PM1E)**.
+Plugin de eventos dinámicos para **NukkitPetteriM1Edition (PM1E)**.
 
 - Autor: BrunoJaegerK
 - Java: 17
-- Dependencia: `cn.nukkit:Nukkit:PM1E` (provided)
-- Eventos iniciales: MeteorFall y LostTreasure
+- API: PM1E `release` (dependencia `provided`)
+- Eventos 1.0.0: MeteorFall y LostTreasure
 
-## Eventos
+## MeteorFall
+- Busca ubicaciones en mundos cargados y cerca de jugadores activos.
+- Valida el volumen completo antes de modificar el terreno.
+- Rechaza construcciones, bloques no naturales y regiones denegadas.
+- Crea un cráter permanente con minerales y núcleo de obsidiana.
+- Permite reclamar una recompensa única interactuando con el núcleo durante el evento.
+- Revierte los cambios si Nukkit no puede aplicar el impacto completo.
 
-### MeteorFall
-- Busca una ubicacion segura en un mundo con jugadores conectados.
-- Solo evalua chunks que ya estan cargados; no genera terreno para buscar ubicaciones.
-- Valida el volumen completo antes de cambiar bloques.
-- Rechaza construcciones y ubicaciones denegadas por proveedores de proteccion.
-- Genera un crater permanente, con borde de roca y nucleo de obsidiana.
-- Si falla una escritura durante el impacto, intenta restaurar los bloques modificados.
-
-### LostTreasure
-- Coloca un cofre con un identificador persistente propio.
+## LostTreasure
+- Coloca un cofre temporal con identificador persistente en su BlockEntity.
 - Publica pistas progresivas.
-- El primer jugador dentro del radio configurado puede reclamar la recompensa principal.
-- El cofre no puede romperse normalmente durante el evento.
-- Se elimina al reclamar, expirar o detener el evento.
-- El registro permite recuperar y limpiar el cofre tras un cierre abrupto, sin borrar cofres ajenos.
+- El primer jugador cercano que reclama recibe la recompensa principal.
+- Protege el cofre frente a rotura e interacción normal.
+- Limpia el cofre al reclamar, expirar, detener o recuperar un cierre abrupto.
 
-## Integraciones
-
-- EconomyAPI es opcional y se detecta por reflexion usando `me.onebone.economyapi.EconomyAPI`.
-- La proteccion de regiones usa la interfaz `RegionProtectionProvider`.
-- Un plugin de proteccion externo debe implementar y registrar su adaptador contra su API real. No se anuncia compatibilidad automatica con WorldGuard ni con otros plugins.
-- Si EconomyAPI no esta disponible, se omite el dinero y se mantienen las recompensas de objetos.
+## Sistemas
+- Todos los mundos cargados son elegibles; se pueden excluir mundos.
+- EconomyAPI es opcional y se detecta por reflexión.
+- Protección extensible mediante `RegionProtectionProvider`.
+- Estadísticas persistentes de reclamaciones por jugador y globales.
+- Recompensas configurables en `rewards.yml`; los objetos que no caben en el inventario se dejan en el suelo junto al jugador.
+- Configuración y mensajes en YAML.
 
 ## Comandos
+- `/we list`, `/we status`
+- `/we start <meteorfall|losttreasure|random>`
+- `/we stop`, `/we claim`, `/we reload`
+- `/we stats [jugador]`
 
-- `/we` — ayuda.
-- `/we list` — eventos disponibles.
-- `/we status` — evento activo.
-- `/we start <meteorfall|losttreasure|random>` — iniciar un evento.
-- `/we stop` — detener el evento.
-- `/we claim` — reclamar el tesoro dentro del radio.
-- `/we stats` — estadisticas propias o totales desde consola.
-- `/we stats <jugador>` — estadisticas de un jugador conectado.
-- `/we reload` — recargar configuracion y mensajes.
+## Protección externa
+Un plugin de regiones puede implementar `RegionProtectionProvider` y registrarlo mediante `WorldEventsNK.getProtectionManager().registerProvider(...)`. No se declara compatibilidad automática con plugins de terceros sin un adaptador probado.
 
-## Datos persistentes
-
-- `pending-event.yml`: ubicacion, fase y marcador del cofre temporal para recuperacion.
-- `statistics.yml`: reclamaciones por UUID y total acumulado.
-- `rewards.yml`: cantidades de recompensas y rangos monetarios.
-
-La reclamacion se registra en disco antes de entregar el premio para impedir duplicaciones tras un cierre abrupto. Como contrapartida, un cierre en el instante exacto entre el registro y la entrega puede dejar una reclamacion contabilizada sin que el jugador haya recibido todos los premios.
-
-## Compilacion
-
-Requiere JDK 17 y Maven 3.9+.
+## Compilación
+Requiere JDK 17 y Maven. GitHub Actions instala la API de la rama `release` de `BrunoJaegerK/NukkitPetteriM1Edition` y construye el plugin.
 
 ```bash
 mvn clean package
 ```
 
-El JAR se genera en `target/WorldEventsNK.jar`. GitHub Actions construye primero la rama `release` de `BrunoJaegerK/NukkitPetteriM1Edition` y despues compila WorldEventsNK.
+JAR: `target/WorldEventsNK.jar`.
 
-## Seguridad y limites
-
-- MeteorFall modifica el mundo permanentemente. Excluye los mundos donde no quieras crateres.
-- La proteccion generica solo puede respetar regiones de terceros cuando existe un adaptador registrado para ese plugin.
-- La seleccion considera todos los mundos cargados y no excluidos. Usa jugadores como referencia cuando los hay y el spawn en mundos sin jugadores; nunca fuerza la generacion de chunks.
-- No se ha validado aun el comportamiento visual y de juego dentro de una instancia real de servidor; la compilacion automatizada valida compatibilidad de codigo/API, no una prueba de gameplay.
+**Importante:** MeteorFall modifica permanentemente terreno natural. Revisa el radio, la profundidad y los mundos habilitados antes de activarlo en un mapa de producción.

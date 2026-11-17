@@ -1,11 +1,15 @@
 package com.brunojaeger.worldevents.event.meteor;
 
+import cn.nukkit.Player;
 import cn.nukkit.block.Block;
 import cn.nukkit.level.Level;
+import cn.nukkit.level.Sound;
 import cn.nukkit.level.format.FullChunk;
+import cn.nukkit.math.Vector3;
 import com.brunojaeger.worldevents.WorldEventsNK;
 import com.brunojaeger.worldevents.core.EventState;
 import com.brunojaeger.worldevents.event.WorldEvent;
+import com.brunojaeger.worldevents.reward.RewardManager;
 import com.brunojaeger.worldevents.world.EventLocation;
 import com.brunojaeger.worldevents.world.SafeLocationFinder;
 
@@ -15,13 +19,17 @@ import java.util.List;
 public final class MeteorFallEvent implements WorldEvent {
     private final WorldEventsNK plugin;
     private final SafeLocationFinder locations;
+    private final RewardManager rewards;
     private EventState state = EventState.IDLE;
     private EventLocation location;
     private int remainingSeconds;
+    private int coreX, coreY, coreZ;
+    private boolean coreClaimed;
 
-    public MeteorFallEvent(WorldEventsNK plugin, SafeLocationFinder locations) {
+    public MeteorFallEvent(WorldEventsNK plugin, SafeLocationFinder locations, RewardManager rewards) {
         this.plugin = plugin;
         this.locations = locations;
+        this.rewards = rewards;
     }
 
     @Override public String getId() { return "meteorfall"; }
@@ -35,11 +43,14 @@ public final class MeteorFallEvent implements WorldEvent {
             state = EventState.FAILED;
             return false;
         }
+        coreClaimed = false;
         remainingSeconds = Math.max(30, plugin.getConfig().getInt("events.duration-seconds", 600));
         state = EventState.ACTIVE;
         plugin.getServer().broadcastMessage(plugin.getMessages().format("event-started",
                 "{event}", "MeteorFall", "{world}", location.getLevel().getName(),
                 "{x}", Integer.toString(location.getX()), "{z}", Integer.toString(location.getZ())));
+        location.getLevel().addSound(new Vector3(location.getX() + 0.5, location.getY(), location.getZ() + 0.5),
+                Sound.RANDOM_EXPLODE, 1.0f, 0.8f);
         return true;
     }
 
@@ -75,7 +86,7 @@ public final class MeteorFallEvent implements WorldEvent {
                         return reject("se encontro una construccion o bloque no natural");
                     }
                     if (!plugin.getProtectionManager().canModify(level, x, y, z, getId())) {
-                        return reject("un proveedor de proteccion denego el area");
+                        return reject("un proveedor de proteccion denego un punto");
                     }
                     int replacement;
                     if (distanceSquared >= (radius - 1) * (radius - 1)) {
@@ -99,32 +110,45 @@ public final class MeteorFallEvent implements WorldEvent {
         int centerZ = location.getZ();
         int centerSurface = level.getChunkIfLoaded(centerX >> 4, centerZ >> 4)
                 .getHighestBlockAt(centerX & 15, centerZ & 15, false);
-        int coreY = centerSurface - depth;
-        Block coreOriginal = level.getBlock(centerX, coreY, centerZ, false);
+        int candidateCoreY = centerSurface - depth;
+        Block coreOriginal = level.getBlock(centerX, candidateCoreY, centerZ, false);
         if (coreOriginal == null || !isNatural(coreOriginal.getId())
-                || !plugin.getProtectionManager().canModify(level, centerX, coreY, centerZ, getId())) {
+                || !plugin.getProtectionManager().canModify(level, centerX, candidateCoreY, centerZ, getId())) {
             return reject("no se puede colocar el nucleo del meteorito de forma segura");
         }
-        changes.add(new BlockChange(centerX, coreY, centerZ,
+        changes.add(new BlockChange(centerX, candidateCoreY, centerZ,
                 coreOriginal.getId(), coreOriginal.getDamage(), Block.OBSIDIAN));
         if (changes.size() > maxChanges) return reject("se excedio el limite de cambios");
 
         List<BlockChange> applied = new ArrayList<>();
-        for (BlockChange change : changes) {
-            if (!level.setBlock(change.x, change.y, change.z, Block.get(change.newId), false, true)) {
-                rollback(level, applied);
-                return reject("Nukkit no pudo aplicar todos los cambios; se revirtio el impacto");
+        try {
+            for (BlockChange change : changes) {
+                if (!level.setBlock(change.x, change.y, change.z, Block.get(change.newId), false, true)) {
+                    rollback(level, applied);
+                    return reject("Nukkit no pudo aplicar todos los cambios; se revirtio el impacto");
+                }
+                applied.add(change);
             }
-            applied.add(change);
+        } catch (Throwable error) {
+            rollback(level, applied);
+            plugin.getLogger().warning("Excepcion aplicando MeteorFall: " + error.getMessage());
+            return reject("se revirtieron los cambios tras una excepcion");
         }
+        coreX = centerX;
+        coreY = candidateCoreY;
+        coreZ = centerZ;
         return true;
     }
 
     private void rollback(Level level, List<BlockChange> applied) {
         for (int i = applied.size() - 1; i >= 0; i--) {
             BlockChange change = applied.get(i);
-            level.setBlock(change.x, change.y, change.z,
-                    Block.get(change.oldId, change.oldMeta), false, true);
+            try {
+                level.setBlock(change.x, change.y, change.z,
+                        Block.get(change.oldId, change.oldMeta), false, true);
+            } catch (Throwable error) {
+                plugin.getLogger().critical("No se pudo revertir un bloque de MeteorFall: " + error.getMessage());
+            }
         }
     }
 
@@ -139,6 +163,17 @@ public final class MeteorFallEvent implements WorldEvent {
                 || id == Block.END_STONE || id == Block.CLAY_BLOCK;
     }
 
+    public boolean claimCore(Player player, Block block) {
+        if (state != EventState.ACTIVE || coreClaimed || location == null || player == null || block == null) return false;
+        if (player.getLevel() != location.getLevel() || block.getLevel() != location.getLevel()) return false;
+        if (block.getId() != Block.OBSIDIAN || block.getFloorX() != coreX
+                || block.getFloorY() != coreY || block.getFloorZ() != coreZ) return false;
+        coreClaimed = true;
+        rewards.give(getId(), player);
+        player.sendMessage(plugin.getMessages().get("meteor-core-claimed"));
+        return true;
+    }
+
     @Override
     public void tick() {
         if (state == EventState.ACTIVE && --remainingSeconds <= 0) state = EventState.COMPLETED;
@@ -147,6 +182,5 @@ public final class MeteorFallEvent implements WorldEvent {
     @Override public void stop() { if (state == EventState.ACTIVE) state = EventState.COMPLETED; }
     @Override public boolean isFinished() { return state == EventState.COMPLETED || state == EventState.FAILED; }
 
-    private record BlockChange(int x, int y, int z, int oldId, int oldMeta, int newId) {
-    }
+    private record BlockChange(int x, int y, int z, int oldId, int oldMeta, int newId) { }
 }

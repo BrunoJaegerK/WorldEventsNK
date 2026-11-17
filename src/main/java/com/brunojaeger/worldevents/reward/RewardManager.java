@@ -20,11 +20,10 @@ public final class RewardManager {
         this.rewards = new Config(new File(plugin.getDataFolder(), "rewards.yml"), Config.YAML);
     }
 
-    public void reload() {
-        rewards.reload();
-    }
+    public void reload() { rewards.reload(); }
 
     public void give(String eventId, Player player) {
+        if (player == null || !player.isOnline()) return;
         String base = eventId + ".";
         int minMoney = Math.max(0, rewards.getInt(base + "money-min", 0));
         int maxMoney = Math.max(minMoney, rewards.getInt(base + "money-max", minMoney));
@@ -42,7 +41,14 @@ public final class RewardManager {
     private void giveItem(Player player, int itemId, String minPath, String maxPath, int defaultMin, int defaultMax) {
         int min = Math.max(0, rewards.getInt(minPath, defaultMin));
         int max = Math.max(min, rewards.getInt(maxPath, defaultMax));
-        if (max > 0) player.getInventory().addItem(Item.get(itemId, 0,
-                ThreadLocalRandom.current().nextInt(min, max + 1)));
+        if (max <= 0) return;
+        Item item = Item.get(itemId, 0, ThreadLocalRandom.current().nextInt(min, max + 1));
+        if (item == null || item.getId() == 0) return;
+        Item[] leftovers = player.getInventory().addItem(item);
+        for (Item leftover : leftovers) {
+            if (leftover != null && leftover.getId() != 0) {
+                player.getLevel().dropItem(player.getPosition(), leftover);
+            }
+        }
     }
 }

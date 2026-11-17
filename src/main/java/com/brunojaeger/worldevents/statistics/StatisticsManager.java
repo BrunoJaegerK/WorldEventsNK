@@ -16,21 +16,35 @@ public final class StatisticsManager {
     }
 
     public void recordTreasureClaim(Player player) {
-        if (!plugin.getConfig().getBoolean("statistics.enabled", true)) return;
+        recordEventClaim(player, "losttreasure");
+    }
+
+    public void recordMeteorCoreClaim(Player player) {
+        recordEventClaim(player, "meteorfall");
+    }
+
+    private void recordEventClaim(Player player, String eventId) {
+        if (!plugin.getConfig().getBoolean("statistics.enabled", true) || player == null) return;
         String path = "players." + player.getUniqueId();
         statistics.set(path + ".name", player.getName());
-        statistics.set(path + ".treasure-claims", getTreasureClaims(player) + 1);
-        statistics.set("totals.treasure-claims", getTotalTreasureClaims() + 1);
+        statistics.set(path + "." + eventId + "-claims", getEventClaims(player, eventId) + 1);
+        statistics.set("totals." + eventId + "-claims", getTotalEventClaims(eventId) + 1);
         statistics.save();
     }
 
-    public int getTreasureClaims(Player player) {
-        if (!plugin.getConfig().getBoolean("statistics.enabled", true)) return 0;
-        return statistics.getInt("players." + player.getUniqueId() + ".treasure-claims", 0);
+    public int getTreasureClaims(Player player) { return getEventClaims(player, "losttreasure"); }
+    public int getMeteorClaims(Player player) { return getEventClaims(player, "meteorfall"); }
+
+    public int getEventClaims(Player player, String eventId) {
+        if (!plugin.getConfig().getBoolean("statistics.enabled", true) || player == null) return 0;
+        return statistics.getInt("players." + player.getUniqueId() + "." + eventId + "-claims", 0);
     }
 
-    public int getTotalTreasureClaims() {
+    public int getTotalTreasureClaims() { return getTotalEventClaims("losttreasure"); }
+    public int getTotalMeteorClaims() { return getTotalEventClaims("meteorfall"); }
+
+    public int getTotalEventClaims(String eventId) {
         if (!plugin.getConfig().getBoolean("statistics.enabled", true)) return 0;
-        return statistics.getInt("totals.treasure-claims", 0);
+        return statistics.getInt("totals." + eventId + "-claims", 0);
     }
 }

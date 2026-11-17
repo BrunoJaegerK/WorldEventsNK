@@ -202,5 +202,5 @@ public final class LostTreasureEvent implements WorldEvent {
     }
 
     public boolean isClaimed() { return claimed || storage.isTreasureClaimed(); }
-    public EventLocation getLocation() { return location; }
+    @Override public EventLocation getLocation() { return location; }
 }

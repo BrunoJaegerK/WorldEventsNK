@@ -30,7 +30,8 @@ public final class WorldEventsCommand {
                 WorldEvent event = manager.getActiveEvent();
                 if (event == null) sender.sendMessage(plugin.getMessages().get("status-none"));
                 else sender.sendMessage(plugin.getMessages().format("event-status",
-                        "{event}", event.getId(), "{state}", event.getState().name()));
+                        "{event}", event.getId(), "{state}", event.getState().name(),
+                        "{remaining}", Integer.toString(event.getRemainingSeconds())));
                 return true;
             }
             case "start" -> {

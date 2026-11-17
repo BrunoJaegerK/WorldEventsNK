@@ -137,6 +137,14 @@ public final class EventStorage {
 
     public void recover() {
         if (!pending.getBoolean("treasure.active", false)) return;
+        // Al habilitar el plugin no puede quedar vivo un evento de la sesión anterior.
+        // Si su chunk aún no existe/no está disponible, se conserva como limpieza pendiente.
+        if ("active".equalsIgnoreCase(pending.getString("treasure.phase", ""))) {
+            pending.set("treasure.phase", "cleanup");
+            if (!pending.save()) {
+                plugin.getLogger().warning("No se pudo persistir la limpieza pendiente del tesoro al iniciar.");
+            }
+        }
         String worldName = pending.getString("treasure.world", "");
         int x = pending.getInt("treasure.x");
         int y = pending.getInt("treasure.y");

@@ -14,16 +14,21 @@ public final class EventRegistry {
         if (id == null || id.isBlank() || factory == null) {
             throw new IllegalArgumentException("El identificador y la fábrica del evento son obligatorios.");
         }
-        factories.put(id.toLowerCase(Locale.ROOT), factory);
+        String normalized = id.toLowerCase(Locale.ROOT);
+        if (factories.containsKey(normalized)) {
+            throw new IllegalStateException("Ya existe un evento registrado con el ID '" + normalized + "'.");
+        }
+        factories.put(normalized, factory);
     }
 
     public WorldEvent create(String id) {
+        if (id == null) return null;
         Supplier<WorldEvent> factory = factories.get(id.toLowerCase(Locale.ROOT));
         return factory == null ? null : factory.get();
     }
 
     public boolean contains(String id) {
-        return factories.containsKey(id.toLowerCase(Locale.ROOT));
+        return id != null && factories.containsKey(id.toLowerCase(Locale.ROOT));
     }
 
     public Map<String, Supplier<WorldEvent>> getFactories() {

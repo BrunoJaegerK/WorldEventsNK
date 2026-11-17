@@ -56,8 +56,15 @@ public final class EventManager {
         if (event == null) return false;
         try {
             if (!event.start()) {
+                try {
+                    event.stop();
+                } catch (RuntimeException cleanupError) {
+                    plugin.getLogger().error("No se pudo limpiar el evento " + normalized
+                            + " después de un inicio fallido.", cleanupError);
+                }
                 history.record(normalized, "FAILED", event.getLocation());
-                plugin.getLogger().warning("No se pudo iniciar " + normalized + ": no se encontró una ubicación válida.");
+                plugin.getLogger().warning("No se pudo iniciar " + normalized
+                        + ": la preparación o validación del evento falló.");
                 return false;
             }
         } catch (RuntimeException error) {

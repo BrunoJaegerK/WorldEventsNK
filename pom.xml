@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.brunojaeger</groupId>
     <artifactId>WorldEventsNK</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>WorldEventsNK</name>
     <description>Dynamic survival events for Nukkit PetteriM1 Edition</description>
     <properties>

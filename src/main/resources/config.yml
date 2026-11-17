@@ -41,3 +41,4 @@ statistics:
 performance:
   max-block-changes-per-event: 150
 
+\nhistory:\n  enabled: true\n  maximum-entries: 100\n

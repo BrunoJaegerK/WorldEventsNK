@@ -2,7 +2,6 @@ package com.brunojaeger.worldevents.event.treasure;
 
 import cn.nukkit.Player;
 import cn.nukkit.block.Block;
-import cn.nukkit.item.Item;
 import com.brunojaeger.worldevents.WorldEventsNK;
 import com.brunojaeger.worldevents.core.EventState;
 import com.brunojaeger.worldevents.event.WorldEvent;
@@ -18,6 +17,7 @@ public final class LostTreasureEvent implements WorldEvent {
     private EventLocation location;
     private int remainingSeconds;
     private boolean claimed;
+    private boolean chestPlaced;
 
     public LostTreasureEvent(WorldEventsNK plugin, SafeLocationFinder locations, RewardManager rewards) {
         this.plugin = plugin;
@@ -37,13 +37,18 @@ public final class LostTreasureEvent implements WorldEvent {
             return false;
         }
         int chestY = location.getY() + 1;
-        if (!plugin.getProtectionManager().canModify(location.getLevel(), location.getX(), chestY,
+        if (location.getLevel().getBlock(location.getX(), chestY, location.getZ(), false).getId() != Block.AIR
+                || !plugin.getProtectionManager().canModify(location.getLevel(), location.getX(), chestY,
                 location.getZ(), getId())) {
             state = EventState.FAILED;
             return false;
         }
-        location.getLevel().setBlock(location.getX(), chestY, location.getZ(),
+        chestPlaced = location.getLevel().setBlock(location.getX(), chestY, location.getZ(),
                 Block.get(Block.CHEST), false, true);
+        if (!chestPlaced) {
+            state = EventState.FAILED;
+            return false;
+        }
         remainingSeconds = Math.max(30, plugin.getConfig().getInt("events.duration-seconds", 600));
         state = EventState.ACTIVE;
         plugin.getServer().broadcastMessage("§6[WorldEvents] §e¡Se ha escondido un tesoro en "
@@ -52,7 +57,7 @@ public final class LostTreasureEvent implements WorldEvent {
     }
 
     public boolean claim(Player player) {
-        if (state != EventState.ACTIVE || claimed || location == null) return false;
+        if (state != EventState.ACTIVE || claimed || !chestPlaced || location == null) return false;
         if (player.getLevel() != location.getLevel()) return false;
         int radius = Math.max(2, plugin.getConfig().getInt("losttreasure.claim-radius", 5));
         double dx = player.getX() - (location.getX() + 0.5);
@@ -60,12 +65,18 @@ public final class LostTreasureEvent implements WorldEvent {
         double dz = player.getZ() - (location.getZ() + 0.5);
         if (dx * dx + dy * dy + dz * dz > radius * radius) return false;
 
-        // Marcar antes de entregar para impedir doble reclamación en llamadas consecutivas.
+        // Validar que el bloque siga siendo el cofre de este evento.
+        int chestY = location.getY() + 1;
+        if (location.getLevel().getBlock(location.getX(), chestY, location.getZ(), false).getId() != Block.CHEST) {
+            return false;
+        }
+
+        // La reclamacion se marca antes de entregar cualquier objeto o dinero.
         claimed = true;
         rewards.give(getId(), player);
         player.sendMessage("§aHas reclamado el tesoro perdido.");
-        player.getLevel().setBlock(location.getX(), location.getY() + 1, location.getZ(),
-                Block.get(Block.AIR), false, true);
+        location.getLevel().setBlock(location.getX(), chestY, location.getZ(), Block.get(Block.AIR), false, true);
+        chestPlaced = false;
         state = EventState.COMPLETED;
         return true;
     }
@@ -76,22 +87,30 @@ public final class LostTreasureEvent implements WorldEvent {
         if (--remainingSeconds <= 0) {
             removeChestIfUnchanged();
             state = EventState.COMPLETED;
+            plugin.getServer().broadcastMessage("§7El tesoro perdido ha desaparecido sin ser reclamado.");
         }
     }
 
     private void removeChestIfUnchanged() {
-        if (location == null) return;
+        if (location == null || !chestPlaced) return;
         int y = location.getY() + 1;
-        if (location.getLevel().getBlock(location.getX(), y, location.getZ()).getId() == Block.CHEST
+        if (location.getLevel().getBlock(location.getX(), y, location.getZ(), false).getId() == Block.CHEST
                 && plugin.getProtectionManager().canModify(location.getLevel(), location.getX(), y,
                 location.getZ(), getId())) {
-            location.getLevel().setBlock(location.getX(), y, location.getZ(),
-                    Block.get(Block.AIR), false, true);
+            location.getLevel().setBlock(location.getX(), y, location.getZ(), Block.get(Block.AIR), false, true);
         }
+        chestPlaced = false;
     }
 
-    @Override public void stop() { removeChestIfUnchanged(); state = EventState.COMPLETED; }
-    @Override public boolean isFinished() { return state == EventState.COMPLETED || state == EventState.FAILED; }
+    @Override public void stop() {
+        removeChestIfUnchanged();
+        state = EventState.COMPLETED;
+    }
+
+    @Override public boolean isFinished() {
+        return state == EventState.COMPLETED || state == EventState.FAILED;
+    }
+
     public boolean isClaimed() { return claimed; }
     public EventLocation getLocation() { return location; }
 }

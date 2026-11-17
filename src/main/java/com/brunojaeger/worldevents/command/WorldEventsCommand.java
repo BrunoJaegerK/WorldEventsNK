@@ -87,6 +87,10 @@ public final class WorldEventsCommand {
                     sender.sendMessage(plugin.getMessages().get("unknown-event"));
                     return true;
                 }
+                if (!requested.equals("random") && !manager.isEventEnabled(requested)) {
+                    sender.sendMessage(plugin.getMessages().get("event-disabled-command"));
+                    return true;
+                }
                 boolean started = manager.start(requested);
                 if (!started) {
                     sender.sendMessage(manager.hasActiveEvent()

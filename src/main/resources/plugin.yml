@@ -10,7 +10,7 @@ softdepend:
 commands:
   we:
     description: Administración y consulta de WorldEventsNK
-    usage: "/we [list|status|start|stop|claim|stats|reload]"
+    usage: "/we [list|status|history|start|stop|claim|stats|reload]"
     aliases: [worldevents]
 permissions:
   worldevents.admin:

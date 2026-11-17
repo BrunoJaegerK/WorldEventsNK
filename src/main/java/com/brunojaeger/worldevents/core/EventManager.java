@@ -11,6 +11,8 @@ import com.brunojaeger.worldevents.event.treasure.LostTreasureEvent;
 import com.brunojaeger.worldevents.integration.economy.EconomyManager;
 import com.brunojaeger.worldevents.integration.protection.ProtectionManager;
 import com.brunojaeger.worldevents.reward.RewardManager;
+import com.brunojaeger.worldevents.statistics.StatisticsManager;
+import com.brunojaeger.worldevents.storage.EventStorage;
 import com.brunojaeger.worldevents.world.SafeLocationFinder;
 
 import java.io.File;
@@ -29,14 +31,14 @@ public final class EventManager {
     private WorldEvent activeEvent;
     private int automaticCountdown;
 
-    public EventManager(WorldEventsNK plugin, ProtectionManager protection) {
+    public EventManager(WorldEventsNK plugin, ProtectionManager protection, EventStorage storage, StatisticsManager statistics) {
         this.plugin = plugin;
         this.locations = new SafeLocationFinder(plugin, protection);
         this.economy = new EconomyManager(plugin);
         this.rewards = new RewardManager(plugin, economy);
         this.eventDefinitions = new Config(new File(plugin.getDataFolder(), "events.yml"), Config.YAML);
         registry.register("meteorfall", () -> new MeteorFallEvent(plugin, locations));
-        registry.register("losttreasure", () -> new LostTreasureEvent(plugin, locations, rewards));
+        registry.register("losttreasure", () -> new LostTreasureEvent(plugin, locations, rewards, storage, statistics));
         resetAutomaticCountdown();
     }
 

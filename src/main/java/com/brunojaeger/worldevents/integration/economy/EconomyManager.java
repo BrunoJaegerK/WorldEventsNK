@@ -1,6 +1,7 @@
 package com.brunojaeger.worldevents.integration.economy;
 
 import cn.nukkit.Player;
+import cn.nukkit.plugin.Plugin;
 import com.brunojaeger.worldevents.WorldEventsNK;
 
 import java.lang.reflect.Method;
@@ -18,7 +19,7 @@ public final class EconomyManager {
     private void connect() {
         if (!plugin.getConfig().getBoolean("economy.enabled", true)) return;
         try {
-            Object economyPlugin = plugin.getServer().getPluginManager().getPlugin(
+            Plugin economyPlugin = plugin.getServer().getPluginManager().getPlugin(
                     plugin.getConfig().getString("economy.provider", "EconomyAPI"));
             if (economyPlugin == null || !economyPlugin.isEnabled()) {
                 plugin.getLogger().info("EconomyAPI no está disponible; las recompensas monetarias se omiten.");

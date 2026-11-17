@@ -23,6 +23,24 @@ public final class EventHistoryManager {
     public EventHistoryManager(WorldEventsNK plugin) {
         this.plugin = plugin;
         this.history = new Config(new File(plugin.getDataFolder(), "history.yml"), Config.YAML);
+        recoverInterruptedRuns();
+    }
+
+    /** Cierra como interrumpidas las ejecuciones que quedaron abiertas por un cierre abrupto. */
+    private void recoverInterruptedRuns() {
+        ConfigSection entries = history.getSection("entries");
+        boolean changed = false;
+        long now = System.currentTimeMillis();
+        for (Map.Entry<String, Object> entry : entries.entrySet()) {
+            if (!(entry.getValue() instanceof ConfigSection data)
+                    || !"STARTED".equalsIgnoreCase(data.getString("result", ""))) continue;
+            history.set("entries." + entry.getKey() + ".result", "INTERRUPTED");
+            history.set("entries." + entry.getKey() + ".finished-at", now);
+            changed = true;
+        }
+        if (changed && !history.save()) {
+            plugin.getLogger().warning("No se pudieron marcar como interrumpidos algunos eventos de la sesión anterior.");
+        }
     }
 
     public synchronized void record(String eventId, String result, EventLocation location) {

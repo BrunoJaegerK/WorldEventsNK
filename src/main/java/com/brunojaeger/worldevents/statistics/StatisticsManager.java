@@ -21,24 +21,48 @@ public final class StatisticsManager {
     }
 
     public void recordTreasureClaim(Player player) {
-        if (!plugin.getConfig().getBoolean("statistics.enabled", true)) return;
+        recordEventClaim(player, "treasure-claims");
+    }
+
+    public void recordMeteorCoreClaim(Player player) {
+        recordEventClaim(player, "meteor-claims");
+    }
+
+    private void recordEventClaim(Player player, String counter) {
+        if (!plugin.getConfig().getBoolean("statistics.enabled", true) || player == null) return;
         String path = "players." + player.getUniqueId();
         statistics.set(path + ".name", player.getName());
-        statistics.set(path + ".treasure-claims", getTreasureClaims(player) + 1);
-        statistics.set("totals.treasure-claims", getTotalTreasureClaims() + 1);
+        statistics.set(path + "." + counter, getEventClaims(player, counter) + 1);
+        statistics.set("totals." + counter, getTotalEventClaims(counter) + 1);
         if (!statistics.save()) {
-            plugin.getLogger().warning("No se pudieron guardar las estadísticas de reclamación de " + player.getName() + ".");
+            plugin.getLogger().warning("No se pudieron guardar las estadísticas (" + counter + ") de " + player.getName() + ".");
         }
     }
 
-    public int getTreasureClaims(Player player) {
+    private int getEventClaims(Player player, String counter) {
+        if (!plugin.getConfig().getBoolean("statistics.enabled", true) || player == null) return 0;
+        return Math.max(0, statistics.getInt("players." + player.getUniqueId() + "." + counter, 0));
+    }
+
+    private int getTotalEventClaims(String counter) {
         if (!plugin.getConfig().getBoolean("statistics.enabled", true)) return 0;
-        return statistics.getInt("players." + player.getUniqueId() + ".treasure-claims", 0);
+        return Math.max(0, statistics.getInt("totals." + counter, 0));
+    }
+
+    public int getTreasureClaims(Player player) {
+        return getEventClaims(player, "treasure-claims");
+    }
+
+    public int getMeteorClaims(Player player) {
+        return getEventClaims(player, "meteor-claims");
     }
 
     public int getTotalTreasureClaims() {
-        if (!plugin.getConfig().getBoolean("statistics.enabled", true)) return 0;
-        return statistics.getInt("totals.treasure-claims", 0);
+        return getTotalEventClaims("treasure-claims");
+    }
+
+    public int getTotalMeteorClaims() {
+        return getTotalEventClaims("meteor-claims");
     }
 
     /**

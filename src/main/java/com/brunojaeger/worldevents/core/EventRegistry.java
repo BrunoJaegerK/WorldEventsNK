@@ -31,6 +31,10 @@ public final class EventRegistry {
         return id != null && factories.containsKey(id.toLowerCase(Locale.ROOT));
     }
 
+    public boolean unregister(String id) {
+        return id != null && factories.remove(id.toLowerCase(Locale.ROOT)) != null;
+    }
+
     public Map<String, Supplier<WorldEvent>> getFactories() {
         return Map.copyOf(factories);
     }

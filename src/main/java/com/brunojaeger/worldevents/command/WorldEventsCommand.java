@@ -98,12 +98,15 @@ public final class WorldEventsCommand {
                     }
                 } else if (args.length >= 2) {
                     Player target = plugin.getServer().getPlayer(args[1]);
-                    if (target == null) {
+                    String targetName = target == null ? args[1] : target.getName();
+                    Integer claims = target == null
+                            ? plugin.getStatisticsManager().getTreasureClaimsByName(args[1])
+                            : plugin.getStatisticsManager().getTreasureClaims(target);
+                    if (claims == null) {
                         sender.sendMessage(plugin.getMessages().get("player-not-found"));
                     } else {
                         sender.sendMessage(plugin.getMessages().format("stats-player",
-                                "{player}", target.getName(),
-                                "{count}", Integer.toString(plugin.getStatisticsManager().getTreasureClaims(target))));
+                                "{player}", targetName, "{count}", Integer.toString(claims)));
                     }
                 } else if (sender instanceof Player player) {
                     sender.sendMessage(plugin.getMessages().format("stats-self",

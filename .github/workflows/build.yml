@@ -1,0 +1,37 @@
+name: Build WorldEventsNK
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout WorldEventsNK
+        uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Checkout Nukkit PetteriM1 Edition release
+        uses: actions/checkout@v4
+        with:
+          repository: PetteriM1/NukkitPetteriM1Edition
+          ref: release
+          path: NukkitPetteriM1Edition
+      - name: Build and install PM1E API
+        run: mvn --batch-mode --no-transfer-progress -f NukkitPetteriM1Edition/pom.xml -DskipTests install
+      - name: Compile and package WorldEventsNK
+        run: mvn --batch-mode --no-transfer-progress clean package
+      - name: Upload plugin JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: WorldEventsNK
+          path: target/WorldEventsNK.jar
+          if-no-files-found: error

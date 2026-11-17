@@ -18,6 +18,7 @@ worlds:
   location-attempts-per-world: 20
 
 meteorfall:
+  warning-seconds: 10
   duration-seconds: 600
   radius: 4
   depth: 2

@@ -61,7 +61,7 @@ public final class WorldEventsCommand {
             }
             case "claim" -> {
                 if (!(sender instanceof Player)) {
-                    sender.sendMessage(plugin.getMessages().get("player-not-found"));
+                    sender.sendMessage(plugin.getMessages().get("player-only"));
                     return true;
                 }
                 Player player = (Player) sender;
@@ -78,7 +78,7 @@ public final class WorldEventsCommand {
                 if (args.length >= 2) {
                     Player target = plugin.getServer().getPlayer(args[1]);
                     if (target == null) {
-                        sender.sendMessage(plugin.getMessages().get("player-only"));
+                        sender.sendMessage(plugin.getMessages().get("player-not-found"));
                     } else {
                         sender.sendMessage(plugin.getMessages().format("stats-player",
                                 "{player}", target.getName(),

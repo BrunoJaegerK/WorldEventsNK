@@ -32,6 +32,7 @@ public final class EventStorage {
         pending.set("treasure.z", z);
         pending.set("treasure.marker", marker);
         pending.set("treasure.claimed", false);
+        pending.set("treasure.created-at", System.currentTimeMillis());
         return pending.save() ? marker : null;
     }
 
@@ -54,7 +55,10 @@ public final class EventStorage {
         pending.set("treasure.active", false);
         pending.set("treasure.phase", "none");
         pending.set("treasure.claimed", false);
-        pending.save();
+        pending.set("treasure.created-at", 0L);
+        if (!pending.save()) {
+            plugin.getLogger().warning("No se pudo guardar el cierre del registro del tesoro.");
+        }
     }
 
     public boolean markChestEntity(BlockEntityChest chest, String marker) {
@@ -116,13 +120,23 @@ public final class EventStorage {
             return;
         }
 
-        // El registro persistente identifica la unica coordenada donde el plugin coloco su cofre.
-        // Durante el cierre no hay jugadores que puedan reemplazarlo; se limpia si sigue siendo un cofre.
+        String marker = pending.getString("treasure.marker", "");
+        String phase = pending.getString("treasure.phase", "");
+        long createdAt = pending.getLong("treasure.created-at", 0L);
+        boolean matchingMarker = ownsTreasureChest(level, x, y, z, marker);
+        boolean interruptedPlacement = "placing".equalsIgnoreCase(phase) && createdAt > 0
+                && System.currentTimeMillis() - createdAt <= 120_000L;
+
         if (level.getBlock(x, y, z, false).getId() == Block.CHEST) {
-            BlockEntity entity = level.getBlockEntity(new Vector3(x, y, z));
-            if (entity != null) entity.close();
-            level.setBlock(x, y, z, Block.get(Block.AIR), false, true);
-            plugin.getLogger().info("Se retiro un cofre de evento pendiente tras recuperar el estado anterior.");
+            if (matchingMarker || interruptedPlacement) {
+                BlockEntity entity = level.getBlockEntity(new Vector3(x, y, z));
+                if (entity != null) entity.close();
+                level.setBlock(x, y, z, Block.get(Block.AIR), false, true);
+                plugin.getLogger().info("Se retiro un cofre de evento interrumpido durante la recuperacion.");
+            } else {
+                plugin.getLogger().warning("Se encontro un cofre en la coordenada registrada, pero no coincide "
+                        + "con el marcador del evento. No se eliminara para proteger cofres ajenos.");
+            }
         }
         clearTreasure();
     }

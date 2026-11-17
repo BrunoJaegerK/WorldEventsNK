@@ -1,7 +1,11 @@
+# Los eventos deshabilitados no se seleccionan automáticamente ni con /we start random.
+# cooldown-seconds se aplica a la selección aleatoria y se conserva usando history.yml.
 meteorfall:
   enabled: true
   weight: 50
+  cooldown-seconds: 1800
 
 losttreasure:
   enabled: true
   weight: 50
+  cooldown-seconds: 1800

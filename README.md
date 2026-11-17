@@ -29,6 +29,10 @@ Plugin de eventos dinamicos para **NukkitPetteriM1Edition (PM1E)**.
 - El registro permite recuperar y limpiar el cofre tras un cierre abrupto, sin borrar cofres ajenos.
 - Si el chunk se descarga antes de expirar o detener el evento, la limpieza queda persistida y se reintenta cuando PM1E vuelve a inicializar ese chunk.
 
+## Extensibilidad
+
+- Otros plugins pueden registrar eventos propios mediante `EventRegistry` y la interfaz `WorldEvent`. Consulta [la API de eventos externos](docs/EVENT_API.md).
+
 ## Integraciones
 
 - EconomyAPI es opcional y se detecta por reflexion usando `me.onebone.economyapi.EconomyAPI`.

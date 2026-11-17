@@ -10,12 +10,10 @@ import java.io.File;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class RewardManager {
-    private final WorldEventsNK plugin;
     private final EconomyManager economy;
     private final Config rewards;
 
     public RewardManager(WorldEventsNK plugin, EconomyManager economy) {
-        this.plugin = plugin;
         this.economy = economy;
         this.rewards = new Config(new File(plugin.getDataFolder(), "rewards.yml"), Config.YAML);
     }
@@ -25,18 +23,15 @@ public final class RewardManager {
     }
 
     public void give(String eventId, Player player) {
+        if (!"losttreasure".equals(eventId)) return;
         String base = eventId + ".";
         int minMoney = Math.max(0, rewards.getInt(base + "money-min", 0));
         int maxMoney = Math.max(minMoney, rewards.getInt(base + "money-max", minMoney));
         if (maxMoney > 0 && economy.isAvailable()) {
             economy.deposit(player, ThreadLocalRandom.current().nextInt(minMoney, maxMoney + 1));
         }
-        if ("meteorfall".equals(eventId)) {
-            giveItem(player, Item.DIAMOND, base + "diamond-min", base + "diamond-max", 1, 3);
-        } else if ("losttreasure".equals(eventId)) {
-            giveItem(player, Item.DIAMOND, base + "diamond-min", base + "diamond-max", 2, 6);
-            giveItem(player, Item.EMERALD, base + "emerald-min", base + "emerald-max", 3, 8);
-        }
+        giveItem(player, Item.DIAMOND, base + "diamond-min", base + "diamond-max", 2, 6);
+        giveItem(player, Item.EMERALD, base + "emerald-min", base + "emerald-max", 3, 8);
     }
 
     private void giveItem(Player player, int itemId, String minPath, String maxPath, int defaultMin, int defaultMax) {

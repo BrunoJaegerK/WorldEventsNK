@@ -4,6 +4,7 @@ import cn.nukkit.block.Block;
 import cn.nukkit.blockentity.BlockEntity;
 import cn.nukkit.blockentity.BlockEntityChest;
 import cn.nukkit.level.Level;
+import cn.nukkit.level.format.FullChunk;
 import cn.nukkit.level.format.generic.BaseFullChunk;
 import cn.nukkit.math.Vector3;
 import cn.nukkit.utils.Config;
@@ -93,11 +94,31 @@ public final class EventStorage {
                 && marker.equals(pending.getString("treasure.marker", ""));
     }
 
-    public void removeOwnedTreasureChest(Level level, int x, int y, int z, String marker) {
-        if (!ownsTreasureChest(level, x, y, z, marker)) return;
+    /**
+     * @return true cuando el cofre propio ya no existe o fue retirado; false si el chunk
+     *         no está disponible o Nukkit no pudo completar la retirada.
+     */
+    public boolean removeOwnedTreasureChest(Level level, int x, int y, int z, String marker) {
+        if (level == null || level.getChunk(x >> 4, z >> 4, false) == null) return false;
+        if (level.getBlock(x, y, z, false).getId() != Block.CHEST) return true;
+        // Nunca se elimina un cofre que haya perdido el marcador de propiedad.
+        if (!ownsTreasureChest(level, x, y, z, marker)) return true;
         BlockEntity entity = level.getBlockEntity(new Vector3(x, y, z));
         if (entity != null) entity.close();
-        level.setBlock(x, y, z, Block.get(Block.AIR), false, true);
+        boolean changed = level.setBlock(x, y, z, Block.get(Block.AIR), false, true);
+        return changed || level.getBlock(x, y, z, false).getId() != Block.CHEST;
+    }
+
+    /**
+     * Reintenta la limpieza cuando vuelve a cargarse el chunk que contiene el tesoro.
+     */
+    public void recoverIfChunk(FullChunk chunk) {
+        if (chunk == null || !pending.getBoolean("treasure.active", false)) return;
+        Level level = chunk.getProvider().getLevel();
+        if (level == null || !level.getName().equals(pending.getString("treasure.world", ""))) return;
+        int x = pending.getInt("treasure.x");
+        int z = pending.getInt("treasure.z");
+        if ((x >> 4) == chunk.getX() && (z >> 4) == chunk.getZ()) recover();
     }
 
     public void recover() {
@@ -131,7 +152,11 @@ public final class EventStorage {
             if (matchingMarker || interruptedPlacement) {
                 BlockEntity entity = level.getBlockEntity(new Vector3(x, y, z));
                 if (entity != null) entity.close();
-                level.setBlock(x, y, z, Block.get(Block.AIR), false, true);
+                boolean removed = level.setBlock(x, y, z, Block.get(Block.AIR), false, true);
+                if (!removed && level.getBlock(x, y, z, false).getId() == Block.CHEST) {
+                    plugin.getLogger().warning("No se pudo retirar el cofre pendiente; se conservará el registro para reintentar.");
+                    return;
+                }
                 plugin.getLogger().info("Se retiro un cofre de evento interrumpido durante la recuperacion.");
             } else {
                 plugin.getLogger().warning("Se encontro un cofre en la coordenada registrada, pero no coincide "

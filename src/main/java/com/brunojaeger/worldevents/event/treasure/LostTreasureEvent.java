@@ -90,7 +90,8 @@ public final class LostTreasureEvent implements WorldEvent {
             return false;
         }
 
-        remainingSeconds = Math.max(30, plugin.getConfig().getInt("events.duration-seconds", 600));
+        remainingSeconds = Math.max(30, plugin.getConfig().getInt("losttreasure.duration-seconds",
+                plugin.getConfig().getInt("events.duration-seconds", 600)));
         state = EventState.ACTIVE;
         plugin.getServer().broadcastMessage(plugin.getMessages().format("treasure-announcement",
                 "{world}", location.getLevel().getName()));
@@ -190,6 +191,8 @@ public final class LostTreasureEvent implements WorldEvent {
     @Override public boolean isFinished() {
         return state == EventState.COMPLETED || state == EventState.FAILED;
     }
+
+    @Override public int getRemainingSeconds() { return Math.max(0, remainingSeconds); }
 
     public boolean ownsChest(cn.nukkit.level.Level level, int x, int y, int z) {
         return chestPlaced && !claimed && location != null

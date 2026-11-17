@@ -4,14 +4,12 @@ import cn.nukkit.plugin.PluginBase;
 import com.brunojaeger.worldevents.command.WorldEventsCommand;
 import com.brunojaeger.worldevents.core.EventManager;
 import com.brunojaeger.worldevents.core.EventScheduler;
-import com.brunojaeger.worldevents.core.EventScheduler;
 import com.brunojaeger.worldevents.integration.protection.ProtectionManager;
 import com.brunojaeger.worldevents.listener.WorldEventsListener;
 import com.brunojaeger.worldevents.util.MessageUtils;
 
 public final class WorldEventsNK extends PluginBase {
     private EventManager eventManager;
-    private EventScheduler eventScheduler;
     private EventScheduler eventScheduler;
     private ProtectionManager protectionManager;
     private MessageUtils messages;
@@ -37,7 +35,6 @@ public final class WorldEventsNK extends PluginBase {
 
     @Override
     public void onDisable() {
-        if (eventScheduler != null) eventScheduler.stop();
         if (eventScheduler != null) eventScheduler.stop();
         if (eventManager != null) eventManager.shutdown();
         getLogger().info("WorldEventsNK deshabilitado.");

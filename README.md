@@ -10,6 +10,7 @@ Plugin de eventos dinamicos para **NukkitPetteriM1Edition (PM1E)**.
 ## Eventos
 
 ### MeteorFall
+- Duracion del estado activo configurable independientemente mediante `meteorfall.duration-seconds`. El impacto en el terreno sigue siendo permanente.
 - Busca una ubicacion segura en un mundo con jugadores conectados.
 - Solo evalua chunks que ya estan cargados; no genera terreno para buscar ubicaciones.
 - Valida el volumen completo antes de cambiar bloques.
@@ -18,6 +19,7 @@ Plugin de eventos dinamicos para **NukkitPetteriM1Edition (PM1E)**.
 - Si falla una escritura durante el impacto, intenta restaurar los bloques modificados.
 
 ### LostTreasure
+- Duracion del evento configurable mediante `losttreasure.duration-seconds`.
 - Coloca un cofre con un identificador persistente propio.
 - Publica pistas progresivas.
 - El primer jugador dentro del radio configurado puede reclamar la recompensa principal.

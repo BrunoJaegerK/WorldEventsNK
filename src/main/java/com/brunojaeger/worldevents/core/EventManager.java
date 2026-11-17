@@ -132,6 +132,7 @@ public final class EventManager {
         plugin.reloadConfig();
         eventDefinitions.reload();
         rewards.reload();
+        economy.reload();
         plugin.getMessages().reload();
         resetAutomaticCountdown();
     }

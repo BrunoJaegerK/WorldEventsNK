@@ -65,6 +65,36 @@ public final class EventHistoryManager {
         if (!history.save()) plugin.getLogger().warning("No se pudo limitar el tamaño de history.yml.");
     }
 
+    /** Marca temporal del último inicio exitoso de un evento; sobrevive reinicios. */
+    public long getLastStartTimestamp(String eventId) {
+        long latest = 0L;
+        ConfigSection entries = history.getSection("entries");
+        for (Map.Entry<String, Object> entry : entries.entrySet()) {
+            if (!(entry.getValue() instanceof ConfigSection data)) continue;
+            if (!eventId.equalsIgnoreCase(data.getString("event", ""))
+                    || !"STARTED".equalsIgnoreCase(data.getString("result", ""))) continue;
+            latest = Math.max(latest, data.getLong("timestamp", 0L));
+        }
+        return latest;
+    }
+
+    /** ID del evento cuyo inicio exitoso fue el más reciente. */
+    public String getMostRecentlyStartedEvent() {
+        long latest = 0L;
+        String eventId = null;
+        ConfigSection entries = history.getSection("entries");
+        for (Map.Entry<String, Object> entry : entries.entrySet()) {
+            if (!(entry.getValue() instanceof ConfigSection data)) continue;
+            if (!"STARTED".equalsIgnoreCase(data.getString("result", ""))) continue;
+            long timestamp = data.getLong("timestamp", 0L);
+            if (timestamp > latest) {
+                latest = timestamp;
+                eventId = data.getString("event", null);
+            }
+        }
+        return eventId;
+    }
+
     public List<String> getRecent(int requestedLimit) {
         List<Map.Entry<Long, String>> ordered = new ArrayList<>();
         ConfigSection entries = history.getSection("entries");

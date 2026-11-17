@@ -16,7 +16,10 @@ public final class WorldEventsListener implements Listener {
 
     @EventHandler
     public void onPendingTreasureChunkLoad(ChunkLoadEvent event) {
-        plugin.getEventStorage().recoverIfChunk(event.getChunk());
+        // PM1E dispara ChunkLoadEvent antes de initChunk(); espera un tick para que
+        // los BlockEntities del cofre estén restaurados antes de validar su marcador.
+        plugin.getServer().getScheduler().scheduleDelayedTask(plugin,
+                () -> plugin.getEventStorage().recoverIfChunk(event.getChunk()), 1);
     }
 
     @EventHandler

@@ -124,6 +124,7 @@ public final class LostTreasureEvent implements WorldEvent {
             storage.clearTreasure();
         } else {
             plugin.getLogger().warning("La recompensa fue reclamada, pero la limpieza del cofre queda pendiente hasta cargar su chunk.");
+            storage.markTreasureCleanupPending();
             // Mantener el estado de propiedad en memoria hasta que el listener de carga
             // pueda retirar el cofre y limpiar el registro persistente.
         }
@@ -177,6 +178,7 @@ public final class LostTreasureEvent implements WorldEvent {
             storage.clearTreasure();
         } else {
             plugin.getLogger().warning("La limpieza del cofre queda pendiente hasta que vuelva a cargarse su chunk.");
+            storage.markTreasureCleanupPending();
         }
     }
 

@@ -37,8 +37,9 @@ public final class MeteorFallEvent implements WorldEvent {
         }
         remainingSeconds = Math.max(30, plugin.getConfig().getInt("events.duration-seconds", 600));
         state = EventState.ACTIVE;
-        plugin.getServer().broadcastMessage("§6[WorldEvents] §e¡Un meteorito ha impactado en "
-                + location.getLevel().getName() + " §7(X: " + location.getX() + ", Z: " + location.getZ() + ")!");
+        plugin.getServer().broadcastMessage(plugin.getMessages().format("event-started",
+                "{event}", "MeteorFall", "{world}", location.getLevel().getName(),
+                "{x}", Integer.toString(location.getX()), "{z}", Integer.toString(location.getZ())));
         return true;
     }
 

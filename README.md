@@ -11,8 +11,8 @@ Plugin de eventos dinamicos para **NukkitPetteriM1Edition (PM1E)**.
 
 ### MeteorFall
 - Duracion del estado activo configurable independientemente mediante `meteorfall.duration-seconds`. El impacto en el terreno sigue siendo permanente.
-- Busca una ubicacion segura en un mundo con jugadores conectados.
-- Solo evalua chunks que ya estan cargados; no genera terreno para buscar ubicaciones.
+- Busca ubicaciones en todos los mundos cargados y no excluidos, tomando el spawn como referencia para el rango configurado.
+- Muestrea el rango completo de distancia al spawn y solo evalua chunks que ya estan cargados; nunca genera terreno para buscar ubicaciones.
 - Valida el volumen completo antes de cambiar bloques.
 - Rechaza volumenes con bloques no naturales y ubicaciones denegadas por proveedores de proteccion.
 - Genera un crater permanente, con borde de roca, vetas de hierro/oro/diamante y nucleo de obsidiana.
@@ -21,7 +21,7 @@ Plugin de eventos dinamicos para **NukkitPetteriM1Edition (PM1E)**.
 ### LostTreasure
 - Duracion del evento configurable mediante `losttreasure.duration-seconds`.
 - Coloca un cofre con un identificador persistente propio.
-- Publica pistas progresivas.
+- Publica hasta tres pistas progresivas con radios independientes configurables (`hint-radius-first`, `hint-radius-second`, `hint-radius-third`); la última puede revelar las coordenadas exactas.
 - El primer jugador dentro del radio configurado puede reclamar la recompensa principal.
 - El cofre no puede romperse normalmente durante el evento.
 - Se elimina al reclamar, expirar o detener el evento.
@@ -38,7 +38,8 @@ Plugin de eventos dinamicos para **NukkitPetteriM1Edition (PM1E)**.
 ## Comandos
 
 - `/we` — ayuda.
-- `/we list` — eventos registrados, estado habilitado/deshabilitado y peso de selección aleatoria.
+- `/we list` — eventos registrados, estado habilitado/deshabilitado, peso aleatorio y enfriamiento restante.
+- `/we status` — evento activo o cuenta regresiva del siguiente intento automático.
 - `/we status` — evento activo.
 - `/we history [1-10]` — historial persistente de los últimos eventos con resultado, fecha y ubicación.
 - `/we start <meteorfall|losttreasure|random>` — iniciar un evento.
@@ -54,9 +55,18 @@ Plugin de eventos dinamicos para **NukkitPetteriM1Edition (PM1E)**.
 - `pending-event.yml`: ubicacion, fase y marcador del cofre temporal para recuperacion.
 - `statistics.yml`: reclamaciones por UUID y total acumulado.
 - `history.yml`: historial limitado de inicios, finalizaciones, detenciones y fallos de eventos.
-- `rewards.yml`: activa/desactiva todas las recompensas con `enabled` y configura cantidades de objetos y rangos monetarios.
+- `rewards.yml`: activa/desactiva todas las recompensas, configura cantidades de diamantes/esmeraldas y dinero, y permite un objeto adicional con ID, daño, probabilidad y cantidad configurables.
+- `events.yml`: habilitación, peso de selección y enfriamiento individual de cada evento.
 
 La reclamacion se registra en disco antes de entregar el premio para impedir duplicaciones tras un cierre abrupto. Como contrapartida, un cierre en el instante exacto entre el registro y la entrega puede dejar una reclamacion contabilizada sin que el jugador haya recibido todos los premios.
+
+## Programación y selección automática
+
+- Cada evento admite `enabled`, `weight` y `cooldown-seconds` en `events.yml`.
+- Los enfriamientos se calculan usando el historial persistente y sobreviven reinicios mientras el registro de inicio siga retenido.
+- `events.avoid-consecutive-same-event` evita repetir el último evento cuando existe otra opción elegible.
+- Los enfriamientos se aplican a `/we start random` y al programador automático; iniciar un evento concreto manualmente es una acción administrativa y omite ese enfriamiento.
+- El temporizador automático solo avanza cuando se alcanza el mínimo de jugadores en línea.
 
 ## Compilacion
 

@@ -150,21 +150,28 @@ public final class WorldEventsCommand {
                 } else if (args.length >= 2) {
                     Player target = plugin.getServer().getPlayer(args[1]);
                     String targetName = target == null ? args[1] : target.getName();
-                    Integer claims = target == null
+                    Integer treasureClaims = target == null
                             ? plugin.getStatisticsManager().getTreasureClaimsByName(args[1])
                             : plugin.getStatisticsManager().getTreasureClaims(target);
-                    if (claims == null) {
+                    Integer meteorClaims = target == null
+                            ? plugin.getStatisticsManager().getMeteorClaimsByName(args[1])
+                            : plugin.getStatisticsManager().getMeteorClaims(target);
+                    if (treasureClaims == null && meteorClaims == null) {
                         sender.sendMessage(plugin.getMessages().get("player-not-found"));
                     } else {
                         sender.sendMessage(plugin.getMessages().format("stats-player",
-                                "{player}", targetName, "{count}", Integer.toString(claims)));
+                                "{player}", targetName,
+                                "{treasure}", Integer.toString(treasureClaims == null ? 0 : treasureClaims),
+                                "{meteor}", Integer.toString(meteorClaims == null ? 0 : meteorClaims)));
                     }
                 } else if (sender instanceof Player player) {
                     sender.sendMessage(plugin.getMessages().format("stats-self",
-                            "{count}", Integer.toString(plugin.getStatisticsManager().getTreasureClaims(player))));
+                            "{treasure}", Integer.toString(plugin.getStatisticsManager().getTreasureClaims(player)),
+                            "{meteor}", Integer.toString(plugin.getStatisticsManager().getMeteorClaims(player))));
                 } else {
                     sender.sendMessage(plugin.getMessages().format("stats-total",
-                            "{count}", Integer.toString(plugin.getStatisticsManager().getTotalTreasureClaims())));
+                            "{treasure}", Integer.toString(plugin.getStatisticsManager().getTotalTreasureClaims()),
+                            "{meteor}", Integer.toString(plugin.getStatisticsManager().getTotalMeteorClaims())));
                 }
                 return true;
             }

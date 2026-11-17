@@ -154,6 +154,16 @@ public final class EventManager {
     public boolean hasActiveEvent() { return activeEvent != null; }
     public EventRegistry getRegistry() { return registry; }
 
+    public boolean isEventEnabled(String id) {
+        return plugin.getConfig().getBoolean("events.enabled", true)
+                && registry.contains(id)
+                && eventDefinitions.getBoolean(id + ".enabled", true);
+    }
+
+    public int getEventWeight(String id) {
+        return Math.max(0, eventDefinitions.getInt(id + ".weight", 50));
+    }
+
     public void reload() {
         plugin.reloadConfig();
         eventDefinitions.reload();

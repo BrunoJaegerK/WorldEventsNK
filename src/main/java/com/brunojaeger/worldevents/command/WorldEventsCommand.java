@@ -39,7 +39,12 @@ public final class WorldEventsCommand {
                     sender.sendMessage(plugin.getMessages().get("unknown-event"));
                     return true;
                 }
-                boolean started = manager.start(args[1]);
+                String requested = args[1].toLowerCase(Locale.ROOT);
+                if (!requested.equals("random") && !manager.getRegistry().contains(requested)) {
+                    sender.sendMessage(plugin.getMessages().get("unknown-event"));
+                    return true;
+                }
+                boolean started = manager.start(requested);
                 if (!started) {
                     sender.sendMessage(manager.hasActiveEvent()
                             ? plugin.getMessages().get("event-already-active")
@@ -60,7 +65,10 @@ public final class WorldEventsCommand {
                     return true;
                 }
                 Player player = (Player) sender;
-                if (!manager.claimTreasure(player)) {
+                if (manager.getActiveEvent() == null
+                        || !manager.getActiveEvent().getId().equals("losttreasure")) {
+                    sender.sendMessage(plugin.getMessages().get("treasure-unavailable"));
+                } else if (!manager.claimTreasure(player)) {
                     sender.sendMessage(plugin.getMessages().get("treasure-too-far"));
                 }
                 return true;

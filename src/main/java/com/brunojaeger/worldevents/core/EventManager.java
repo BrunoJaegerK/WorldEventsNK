@@ -5,6 +5,7 @@ import cn.nukkit.level.Level;
 import cn.nukkit.utils.Config;
 import com.brunojaeger.worldevents.WorldEventsNK;
 import com.brunojaeger.worldevents.event.WorldEvent;
+import com.brunojaeger.worldevents.history.EventHistoryManager;
 import com.brunojaeger.worldevents.event.meteor.MeteorFallEvent;
 import com.brunojaeger.worldevents.event.treasure.LostTreasureEvent;
 import com.brunojaeger.worldevents.integration.economy.EconomyManager;
@@ -27,11 +28,13 @@ public final class EventManager {
     private final RewardManager rewards;
     private final Config eventDefinitions;
     private final EventRegistry registry = new EventRegistry();
+    private final EventHistoryManager history;
     private WorldEvent activeEvent;
     private int automaticCountdown;
 
-    public EventManager(WorldEventsNK plugin, ProtectionManager protection, EventStorage storage, StatisticsManager statistics) {
+    public EventManager(WorldEventsNK plugin, ProtectionManager protection, EventStorage storage, StatisticsManager statistics, EventHistoryManager history) {
         this.plugin = plugin;
+        this.history = history;
         this.locations = new SafeLocationFinder(plugin, protection);
         this.economy = new EconomyManager(plugin);
         this.rewards = new RewardManager(plugin, economy);
@@ -53,6 +56,7 @@ public final class EventManager {
         if (event == null) return false;
         try {
             if (!event.start()) {
+                history.record(normalized, "FAILED", event.getLocation());
                 plugin.getLogger().warning("No se pudo iniciar " + normalized + ": no se encontró una ubicación válida.");
                 return false;
             }
@@ -62,10 +66,12 @@ public final class EventManager {
             } catch (RuntimeException cleanupError) {
                 plugin.getLogger().error("Falló la limpieza tras un error al iniciar " + normalized + ".", cleanupError);
             }
+            history.record(normalized, "FAILED", event.getLocation());
             plugin.getLogger().error("Excepción al iniciar el evento " + normalized + ".", error);
             return false;
         }
         activeEvent = event;
+        history.record(normalized, "STARTED", event.getLocation());
         return true;
     }
 
@@ -104,11 +110,13 @@ public final class EventManager {
                 } catch (RuntimeException cleanupError) {
                     plugin.getLogger().error("No se pudo completar la limpieza del evento " + current.getId() + ".", cleanupError);
                 }
+                history.record(current.getId(), "FAILED", current.getLocation());
                 activeEvent = null;
                 resetAutomaticCountdown();
                 return;
             }
             if (current.isFinished()) {
+                history.record(current.getId(), current.getState() == EventState.FAILED ? "FAILED" : "COMPLETED", current.getLocation());
                 plugin.getServer().broadcastMessage(plugin.getMessages().format(
                         "event-finished", "{event}", current.getId()));
                 activeEvent = null;
@@ -133,7 +141,9 @@ public final class EventManager {
         WorldEvent current = activeEvent;
         try {
             current.stop();
+            history.record(current.getId(), "STOPPED", current.getLocation());
         } catch (RuntimeException error) {
+            history.record(current.getId(), "FAILED", current.getLocation());
             plugin.getLogger().error("Error al detener el evento " + current.getId() + ".", error);
         } finally {
             activeEvent = null;
@@ -178,7 +188,9 @@ public final class EventManager {
             WorldEvent current = activeEvent;
             try {
                 current.stop();
+                history.record(current.getId(), "SERVER_STOP", current.getLocation());
             } catch (RuntimeException error) {
+                history.record(current.getId(), "FAILED", current.getLocation());
                 plugin.getLogger().error("Error durante la limpieza final del evento " + current.getId() + ".", error);
             } finally {
                 activeEvent = null;

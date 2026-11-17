@@ -65,9 +65,15 @@ public final class WorldEventsCommand {
                     } else {
                         sender.sendMessage(plugin.getMessages().get("status-auto-disabled"));
                     }
-                } else sender.sendMessage(plugin.getMessages().format("event-status",
-                        "{event}", event.getId(), "{state}", event.getState().name(),
-                        "{remaining}", Integer.toString(event.getRemainingSeconds())));
+                } else {
+                    var location = event.getLocation();
+                    sender.sendMessage(plugin.getMessages().format("event-status",
+                            "{event}", event.getId(), "{state}", event.getState().name(),
+                            "{remaining}", Integer.toString(event.getRemainingSeconds()),
+                            "{world}", location == null ? "-" : location.getLevel().getName(),
+                            "{x}", location == null ? "-" : Integer.toString(location.getX()),
+                            "{z}", location == null ? "-" : Integer.toString(location.getZ())));
+                }
                 return true;
             }
             case "start" -> {

@@ -39,7 +39,8 @@ Plugin de eventos dinamicos para **NukkitPetteriM1Edition (PM1E)**.
 
 - `/we` — ayuda.
 - `/we list` — eventos registrados, estado habilitado/deshabilitado y peso de selección aleatoria.
-- `/we status` — evento activo.\n- `/we history [1-10]` — historial persistente de los últimos eventos con resultado, fecha y ubicación.
+- `/we status` — evento activo.
+- `/we history [1-10]` — historial persistente de los últimos eventos con resultado, fecha y ubicación.
 - `/we start <meteorfall|losttreasure|random>` — iniciar un evento.
 - `/we stop` — detener el evento.
 - `/we claim` — reclamar el tesoro dentro del radio.
@@ -51,7 +52,8 @@ Plugin de eventos dinamicos para **NukkitPetteriM1Edition (PM1E)**.
 ## Datos persistentes
 
 - `pending-event.yml`: ubicacion, fase y marcador del cofre temporal para recuperacion.
-- `statistics.yml`: reclamaciones por UUID y total acumulado.\n- `history.yml`: historial limitado de inicios, finalizaciones, detenciones y fallos de eventos.
+- `statistics.yml`: reclamaciones por UUID y total acumulado.
+- `history.yml`: historial limitado de inicios, finalizaciones, detenciones y fallos de eventos.
 - `rewards.yml`: activa/desactiva todas las recompensas con `enabled` y configura cantidades de objetos y rangos monetarios.
 
 La reclamacion se registra en disco antes de entregar el premio para impedir duplicaciones tras un cierre abrupto. Como contrapartida, un cierre en el instante exacto entre el registro y la entrega puede dejar una reclamacion contabilizada sin que el jugador haya recibido todos los premios.

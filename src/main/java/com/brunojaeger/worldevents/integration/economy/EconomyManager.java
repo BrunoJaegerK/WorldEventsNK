@@ -13,11 +13,25 @@ public final class EconomyManager {
     private final Config integrations;
     private Object economy;
     private Method addMoney;
+    private volatile EconomyProvider externalProvider;
 
     public EconomyManager(WorldEventsNK plugin) {
         this.plugin = plugin;
         this.integrations = new Config(new File(plugin.getDataFolder(), "integrations.yml"), Config.YAML);
         connect();
+    }
+
+    public boolean registerProvider(EconomyProvider provider) {
+        if (provider == null || externalProvider != null) return false;
+        externalProvider = provider;
+        plugin.getLogger().info("Proveedor económico externo registrado: " + provider.getName());
+        return true;
+    }
+
+    public boolean unregisterProvider(EconomyProvider provider) {
+        if (provider == null || externalProvider != provider) return false;
+        externalProvider = null;
+        return true;
     }
 
     public void reload() {
@@ -64,8 +78,17 @@ public final class EconomyManager {
     }
 
     public boolean deposit(Player player, double amount) {
-        if (economy == null || addMoney == null || player == null || !player.isOnline()
-                || !Double.isFinite(amount) || amount <= 0) return false;
+        if (player == null || !player.isOnline() || !Double.isFinite(amount) || amount <= 0) return false;
+        EconomyProvider provider = externalProvider;
+        if (provider != null) {
+            try {
+                if (provider.isAvailable()) return provider.deposit(player, amount);
+            } catch (RuntimeException error) {
+                plugin.getLogger().warning("El proveedor económico " + provider.getName()
+                        + " falló; se intentará el proveedor configurado: " + error.getMessage());
+            }
+        }
+        if (economy == null || addMoney == null) return false;
         try {
             Object result = addMoney.invoke(economy, player, amount);
             if (result instanceof Number number) return number.intValue() == 1;
@@ -78,6 +101,14 @@ public final class EconomyManager {
     }
 
     public boolean isAvailable() {
+        EconomyProvider provider = externalProvider;
+        if (provider != null) {
+            try {
+                if (provider.isAvailable()) return true;
+            } catch (RuntimeException ignored) {
+                // La disponibilidad del proveedor externo no debe romper comandos/eventos.
+            }
+        }
         return economy != null && addMoney != null;
     }
 }

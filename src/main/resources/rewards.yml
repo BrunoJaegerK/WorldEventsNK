@@ -1,9 +1,3 @@
-meteorfall:
-  money-min: 100
-  money-max: 250
-  diamond-min: 1
-  diamond-max: 3
-
 losttreasure:
   money-min: 150
   money-max: 400

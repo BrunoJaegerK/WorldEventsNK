@@ -3,12 +3,14 @@ package com.brunojaeger.worldevents;
 import cn.nukkit.plugin.PluginBase;
 import com.brunojaeger.worldevents.command.WorldEventsCommand;
 import com.brunojaeger.worldevents.core.EventManager;
+import com.brunojaeger.worldevents.core.EventScheduler;
 import com.brunojaeger.worldevents.integration.protection.ProtectionManager;
 import com.brunojaeger.worldevents.listener.WorldEventsListener;
 import com.brunojaeger.worldevents.util.MessageUtils;
 
 public final class WorldEventsNK extends PluginBase {
     private EventManager eventManager;
+    private EventScheduler eventScheduler;
     private ProtectionManager protectionManager;
     private MessageUtils messages;
 
@@ -24,9 +26,8 @@ public final class WorldEventsNK extends PluginBase {
         protectionManager = new ProtectionManager(this);
         eventManager = new EventManager(this, protectionManager);
         getServer().getPluginManager().registerEvents(new WorldEventsListener(this), this);
-
-        int period = Math.max(20, getConfig().getInt("performance.scheduler-period-ticks", 20));
-        getServer().getScheduler().scheduleRepeatingTask(this, eventManager::tick, period);
+        eventScheduler = new EventScheduler(this, eventManager);
+        eventScheduler.start();
 
         getLogger().info("WorldEventsNK habilitado. Eventos: MeteorFall y LostTreasure.");
         getLogger().info("Protección genérica disponible; EconomyAPI es opcional.");
@@ -34,6 +35,7 @@ public final class WorldEventsNK extends PluginBase {
 
     @Override
     public void onDisable() {
+        if (eventScheduler != null) eventScheduler.stop();
         if (eventManager != null) eventManager.shutdown();
         getLogger().info("WorldEventsNK deshabilitado.");
     }

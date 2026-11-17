@@ -32,7 +32,10 @@ public final class EventRegistry {
     }
 
     public boolean unregister(String id) {
-        return id != null && factories.remove(id.toLowerCase(Locale.ROOT)) != null;
+        if (id == null) return false;
+        String normalized = id.toLowerCase(Locale.ROOT);
+        if ("meteorfall".equals(normalized) || "losttreasure".equals(normalized)) return false;
+        return factories.remove(normalized) != null;
     }
 
     public Map<String, Supplier<WorldEvent>> getFactories() {

@@ -90,11 +90,7 @@ public final class EventManager {
 
     public void tick() {
         if (!plugin.getConfig().getBoolean("events.enabled", true)) {
-            if (activeEvent != null) {
-                activeEvent.stop();
-                activeEvent = null;
-                resetAutomaticCountdown();
-            }
+            if (activeEvent != null) stop();
             return;
         }
         if (activeEvent != null) {

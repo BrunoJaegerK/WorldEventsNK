@@ -82,7 +82,7 @@ public final class LostTreasureEvent implements WorldEvent {
         // La reclamacion se marca antes de entregar cualquier objeto o dinero.
         claimed = true;
         rewards.give(getId(), player);
-        player.sendMessage("§aHas reclamado el tesoro perdido.");
+        player.sendMessage(plugin.getMessages().get("treasure-claimed"));
         location.getLevel().setBlock(location.getX(), chestY, location.getZ(), Block.get(Block.AIR), false, true);
         chestPlaced = false;
         TreasureRecoveryStorage.clear(plugin);

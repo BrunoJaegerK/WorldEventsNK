@@ -15,6 +15,7 @@ public final class WorldEventsListener implements Listener {
 
     @EventHandler
     public void onTreasureBreak(BlockBreakEvent event) {
+        if (event.getBlock() == null) return;
         if (plugin.getEventManager().isTreasureBlock(event.getBlock().getLevel(),
                 event.getBlock().getFloorX(), event.getBlock().getFloorY(), event.getBlock().getFloorZ())) {
             event.setCancelled(true);
@@ -24,6 +25,7 @@ public final class WorldEventsListener implements Listener {
 
     @EventHandler
     public void onTreasureInteract(PlayerInteractEvent event) {
+        if (event.getBlock() == null) return;
         if (event.getAction() != PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK) return;
         if (plugin.getEventManager().isTreasureBlock(event.getBlock().getLevel(),
                 event.getBlock().getFloorX(), event.getBlock().getFloorY(), event.getBlock().getFloorZ())) {

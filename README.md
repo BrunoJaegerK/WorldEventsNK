@@ -38,7 +38,7 @@ Plugin de eventos dinamicos para **NukkitPetteriM1Edition (PM1E)**.
 ## Comandos
 
 - `/we` — ayuda.
-- `/we list` — eventos disponibles.
+- `/we list` — eventos registrados, estado habilitado/deshabilitado y peso de selección aleatoria.
 - `/we status` — evento activo.
 - `/we start <meteorfall|losttreasure|random>` — iniciar un evento.
 - `/we stop` — detener el evento.

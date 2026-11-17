@@ -1,0 +1,7 @@
+protection:
+  generic-provider-api: true
+  fail-closed-on-provider-error: true
+economy:
+  economyapi:
+    enabled: true
+    class: me.onebone.economyapi.EconomyAPI

@@ -1,0 +1,6 @@
+meteorfall:
+  enabled: true
+  weight: 50
+losttreasure:
+  enabled: true
+  weight: 50

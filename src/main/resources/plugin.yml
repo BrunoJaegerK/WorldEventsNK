@@ -1,0 +1,7 @@
+name: WorldEventsNK
+main: com.brunojaeger.worldevents.WorldEventsNK
+version: "1.0.0"
+api: ["1.0.0"]
+load: POSTWORLD
+author: BrunoJaegerK
+description: Dynamic survival events for Nukkit PetteriM1 Edition

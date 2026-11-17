@@ -1,0 +1,9 @@
+meteorfall:
+  money: {enabled: true, min: 100, max: 250}
+  items:
+    - {id: 264, min-amount: 2, max-amount: 5, chance: 100}
+losttreasure:
+  money: {enabled: true, min: 150, max: 400}
+  items:
+    - {id: 264, min-amount: 3, max-amount: 8, chance: 100}
+    - {id: 266, min-amount: 8, max-amount: 20, chance: 75}

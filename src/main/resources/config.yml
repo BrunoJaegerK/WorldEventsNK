@@ -1,0 +1,47 @@
+settings:
+  language: es_ES
+  debug: false
+
+events:
+  enabled: true
+  automatic: true
+  minimum-online-players: 3
+  minimum-interval: 1800
+  maximum-interval: 3600
+  maximum-active-events: 1
+
+worlds:
+  mode: ALL_LOADED
+  excluded: [lobby, minigames]
+  minimum-distance-from-spawn: 300
+  maximum-distance-from-spawn: 3000
+  minimum-distance-from-player: 100
+  max-location-attempts: 40
+
+meteorfall:
+  duration: 600
+  radius: 4
+  depth: 2
+  core-block-id: 49
+  natural-block-whitelist: [1, 2, 3, 4, 12, 13, 14, 15, 16, 21, 56, 73, 87, 129, 153]
+
+losttreasure:
+  duration: 900
+  hint-interval: 180
+  chest-block-id: 54
+
+protection:
+  enabled: true
+  fail-safe: true
+  regions: []
+
+economy:
+  enabled: true
+  continue-without-provider: true
+
+performance:
+  max-block-changes-per-event: 150
+  cleanup-on-disable: true
+
+statistics:
+  enabled: true

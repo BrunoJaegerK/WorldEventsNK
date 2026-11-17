@@ -9,6 +9,7 @@ import com.brunojaeger.worldevents.integration.protection.ProtectionManager;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collections;
 import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
 

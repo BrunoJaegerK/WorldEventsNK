@@ -16,3 +16,18 @@ losttreasure:
   bonus-item-chance-percent: 0
   bonus-item-min: 1
   bonus-item-max: 1
+
+meteorfall:
+  # La recompensa del núcleo es independiente de LostTreasure.
+  # Dinero opcional; EconomyAPI debe estar instalado para entregarlo.
+  money-min: 0
+  money-max: 0
+  diamond-min: 1
+  diamond-max: 2
+  emerald-min: 0
+  emerald-max: 1
+  bonus-item-id: 0
+  bonus-item-damage: 0
+  bonus-item-chance-percent: 0
+  bonus-item-min: 1
+  bonus-item-max: 1

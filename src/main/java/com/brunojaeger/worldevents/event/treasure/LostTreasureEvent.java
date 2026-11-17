@@ -3,7 +3,6 @@ package com.brunojaeger.worldevents.event.treasure;
 import cn.nukkit.Player;
 import cn.nukkit.block.Block;
 import cn.nukkit.blockentity.BlockEntityChest;
-import cn.nukkit.blockentity.BlockEntityChest;
 import com.brunojaeger.worldevents.WorldEventsNK;
 import com.brunojaeger.worldevents.core.EventState;
 import com.brunojaeger.worldevents.event.WorldEvent;

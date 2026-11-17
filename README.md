@@ -1,6 +1,6 @@
 # WorldEventsNK
 
-Plugin de eventos dinamicos para **NukkitPetteriM1Edition (PM1E)**.
+Plugin de eventos dinámicos para **NukkitPetteriM1Edition (PM1E)**.
 
 - Autor: BrunoJaegerK
 - Java: 17
@@ -10,17 +10,18 @@ Plugin de eventos dinamicos para **NukkitPetteriM1Edition (PM1E)**.
 ## Eventos
 
 ### MeteorFall
-- Duracion del estado activo configurable independientemente mediante `meteorfall.duration-seconds`. El impacto en el terreno sigue siendo permanente.
+- Duración del estado activo configurable independientemente mediante `meteorfall.duration-seconds`. El impacto en el terreno sigue siendo permanente.
 - Busca ubicaciones en todos los mundos cargados y no excluidos, tomando el spawn como referencia para el rango configurado.
-- Muestrea el rango completo de distancia al spawn y solo evalua chunks que ya estan cargados; nunca genera terreno para buscar ubicaciones.
+- Muestrea el rango completo de distancia al spawn y solo evalúa chunks que ya están cargados; nunca genera terreno para buscar ubicaciones.
 - Valida el volumen completo antes de cambiar bloques.
-- Rechaza volumenes con bloques no naturales y ubicaciones denegadas por proveedores de proteccion.
+- Rechaza volúmenes con bloques no naturales y ubicaciones denegadas por proveedores de protección.
 - Anuncia el punto de impacto con una fase de advertencia configurable (`meteorfall.warning-seconds`) para dar tiempo a los jugadores a apartarse.
-- Genera un crater permanente, con borde de roca, vetas de hierro/oro/diamante y nucleo de obsidiana.
+- Genera un cráter permanente, con borde de roca, vetas de hierro/oro/diamante y núcleo de obsidiana.
+- El núcleo de obsidiana puede reclamarse una sola vez durante el evento mediante clic derecho; entrega recompensas independientes configuradas en `rewards.yml`.
 - Si falla una escritura durante el impacto, intenta restaurar los bloques modificados.
 
 ### LostTreasure
-- Duracion del evento configurable mediante `losttreasure.duration-seconds`.
+- Duración del evento configurable mediante `losttreasure.duration-seconds`.
 - Coloca un cofre con un identificador persistente propio.
 - Publica hasta tres pistas progresivas con radios independientes configurables (`hint-radius-first`, `hint-radius-second`, `hint-radius-third`); la última puede revelar las coordenadas exactas.
 - El primer jugador dentro del radio configurado puede reclamar la recompensa principal.
@@ -35,10 +36,10 @@ Plugin de eventos dinamicos para **NukkitPetteriM1Edition (PM1E)**.
 
 ## Integraciones
 
-- EconomyAPI es opcional y se detecta por reflexion usando `me.onebone.economyapi.EconomyAPI`.
-- La proteccion de regiones usa la interfaz `RegionProtectionProvider`. Consulta [la guía para crear adaptadores](docs/PROTECTION_API.md).
-- Un plugin de proteccion externo debe implementar y registrar su adaptador contra su API real. No se anuncia compatibilidad automatica con WorldGuard ni con otros plugins.
-- Si EconomyAPI no esta disponible, se omite el dinero y se mantienen las recompensas de objetos.
+- EconomyAPI es opcional y se detecta por reflexión usando `me.onebone.economyapi.EconomyAPI`.
+- La protección de regiones usa la interfaz `RegionProtectionProvider`. Consulta [la guía para crear adaptadores](docs/PROTECTION_API.md).
+- Un plugin de protección externo debe implementar y registrar su adaptador contra su API real. No se anuncia compatibilidad automática con WorldGuard ni con otros plugins.
+- Si EconomyAPI no está disponible, se omite el dinero y se mantienen las recompensas de objetos.
 
 ## Comandos
 
@@ -49,20 +50,20 @@ Plugin de eventos dinamicos para **NukkitPetteriM1Edition (PM1E)**.
 - `/we start <meteorfall|losttreasure|random>` — iniciar un evento.
 - `/we stop` — detener el evento.
 - `/we claim` — reclamar el tesoro dentro del radio.
-- `/we stats` — estadisticas propias o totales desde consola.
-- `/we stats <jugador>` — estadisticas por nombre, aunque el jugador este desconectado (si ya tiene registros).
+- `/we stats` — estadísticas propias o totales: tesoros y núcleos de meteorito.
+- `/we stats <jugador>` — estadísticas por nombre, aunque el jugador esté desconectado (si ya tiene registros).
 - `/we stats top [1-10]` — clasificación persistente de los jugadores con más tesoros reclamados, incluidos los desconectados.
-- `/we reload` — recargar configuracion y mensajes.
+- `/we reload` — recargar configuración y mensajes.
 
 ## Datos persistentes
 
-- `pending-event.yml`: ubicacion, fase y marcador del cofre temporal para recuperacion.
-- `statistics.yml`: reclamaciones por UUID y total acumulado.
+- `pending-event.yml`: ubicación, fase y marcador del cofre temporal para recuperación.
+- `statistics.yml`: reclamaciones de tesoros y núcleos por UUID, más totales globales.
 - `history.yml`: historial limitado de inicios, finalizaciones, detenciones y fallos de eventos.
-- `rewards.yml`: activa/desactiva todas las recompensas, configura cantidades de diamantes/esmeraldas y dinero, y permite un objeto adicional con ID, daño, probabilidad y cantidad configurables.
+- `rewards.yml`: activa/desactiva todas las recompensas, configura cantidades de diamantes/esmeraldas y dinero por evento, y permite un objeto adicional con ID, daño, probabilidad y cantidad configurables.
 - `events.yml`: habilitación, peso de selección y enfriamiento individual de cada evento.
 
-La reclamacion se registra en disco antes de entregar el premio para impedir duplicaciones tras un cierre abrupto. Como contrapartida, un cierre en el instante exacto entre el registro y la entrega puede dejar una reclamacion contabilizada sin que el jugador haya recibido todos los premios.
+La reclamación se registra en disco antes de entregar el premio para impedir duplicaciones tras un cierre abrupto. Como contrapartida, un cierre en el instante exacto entre el registro y la entrega puede dejar una reclamación contabilizada sin que el jugador haya recibido todos los premios.
 
 ## Programación y selección automática
 
@@ -72,7 +73,7 @@ La reclamacion se registra en disco antes de entregar el premio para impedir dup
 - Los enfriamientos se aplican a `/we start random` y al programador automático; iniciar un evento concreto manualmente es una acción administrativa y omite ese enfriamiento.
 - El temporizador automático solo avanza cuando se alcanza el mínimo de jugadores en línea.
 
-## Compilacion
+## Compilación
 
 Requiere JDK 17 y Maven 3.9+.
 
@@ -80,11 +81,11 @@ Requiere JDK 17 y Maven 3.9+.
 mvn clean package
 ```
 
-El JAR se genera en `target/WorldEventsNK.jar`. GitHub Actions construye primero la rama `release` de `BrunoJaegerK/NukkitPetteriM1Edition` y despues compila WorldEventsNK.
+El JAR se genera en `target/WorldEventsNK.jar`. GitHub Actions construye primero la rama `release` de `BrunoJaegerK/NukkitPetteriM1Edition` y después compila WorldEventsNK.
 
-## Seguridad y limites
+## Seguridad y límites
 
-- MeteorFall modifica el mundo permanentemente. Excluye los mundos donde no quieras crateres. Una construccion hecha enteramente con bloques naturales no se puede distinguir del terreno solo mediante IDs de bloque; protege esas zonas con el adaptador de regiones.
-- La proteccion generica solo puede respetar regiones de terceros cuando existe un adaptador registrado para ese plugin.
-- La seleccion considera todos los mundos cargados y no excluidos. Usa jugadores como referencia cuando los hay y el spawn en mundos sin jugadores; nunca fuerza la generacion de chunks.
-- No se ha validado aun el comportamiento visual y de juego dentro de una instancia real de servidor; la compilacion automatizada valida compatibilidad de codigo/API, no una prueba de gameplay.
+- MeteorFall modifica el mundo permanentemente. Excluye los mundos donde no quieras cráteres. Una construcción hecha enteramente con bloques naturales no se puede distinguir del terreno solo mediante IDs de bloque; protege esas zonas con el adaptador de regiones.
+- La protección genérica solo puede respetar regiones de terceros cuando existe un adaptador registrado para ese plugin.
+- La selección considera todos los mundos cargados y no excluidos. Usa jugadores como referencia cuando los hay y el spawn en mundos sin jugadores; nunca fuerza la generación de chunks.
+- No se ha validado aún el comportamiento visual y de juego dentro de una instancia real de servidor; la compilación automatizada valida compatibilidad de código/API, no una prueba de gameplay.

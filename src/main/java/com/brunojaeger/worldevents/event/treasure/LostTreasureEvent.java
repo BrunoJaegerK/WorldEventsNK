@@ -59,8 +59,8 @@ public final class LostTreasureEvent implements WorldEvent {
         }
         remainingSeconds = Math.max(30, plugin.getConfig().getInt("events.duration-seconds", 600));
         state = EventState.ACTIVE;
-        plugin.getServer().broadcastMessage("§6[WorldEvents] §e¡Se ha escondido un tesoro en "
-                + location.getLevel().getName() + "§e! Busca pistas con §f/we claim§e.");
+        plugin.getServer().broadcastMessage(plugin.getMessages().format("treasure-announcement",
+                "{world}", location.getLevel().getName()));
         return true;
     }
 

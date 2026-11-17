@@ -88,8 +88,8 @@ public final class EventManager {
         if (activeEvent != null) {
             activeEvent.tick();
             if (activeEvent.isFinished()) {
-                plugin.getServer().broadcastMessage("§6[WorldEvents] §aEl evento "
-                        + activeEvent.getId() + " ha finalizado.");
+                plugin.getServer().broadcastMessage(plugin.getMessages().format(
+                        "event-finished", "{event}", activeEvent.getId()));
                 activeEvent = null;
                 resetAutomaticCountdown();
             }

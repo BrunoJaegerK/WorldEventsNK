@@ -134,9 +134,15 @@ public final class EventManager {
 
     public boolean stop() {
         if (activeEvent == null) return false;
-        activeEvent.stop();
-        activeEvent = null;
-        resetAutomaticCountdown();
+        WorldEvent current = activeEvent;
+        try {
+            current.stop();
+        } catch (RuntimeException error) {
+            plugin.getLogger().error("Error al detener el evento " + current.getId() + ".", error);
+        } finally {
+            activeEvent = null;
+            resetAutomaticCountdown();
+        }
         return true;
     }
 
@@ -163,8 +169,14 @@ public final class EventManager {
 
     public void shutdown() {
         if (activeEvent != null) {
-            activeEvent.stop();
-            activeEvent = null;
+            WorldEvent current = activeEvent;
+            try {
+                current.stop();
+            } catch (RuntimeException error) {
+                plugin.getLogger().error("Error durante la limpieza final del evento " + current.getId() + ".", error);
+            } finally {
+                activeEvent = null;
+            }
         }
     }
 }

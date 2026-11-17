@@ -125,7 +125,7 @@ public final class MeteorFallEvent implements WorldEvent {
     private boolean isNatural(int id) {
         return id == Block.GRASS || id == Block.DIRT || id == Block.STONE
                 || id == Block.SAND || id == Block.GRAVEL || id == Block.NETHERRACK
-                || id == Block.END_STONE || id == Block.CLAY;
+                || id == Block.END_STONE || id == Block.CLAY_BLOCK;
     }
 
     @Override

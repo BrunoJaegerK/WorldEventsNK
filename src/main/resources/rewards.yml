@@ -1,3 +1,4 @@
+# Desactiva todas las recompensas con enabled: false.
 enabled: true
 
 losttreasure:
@@ -7,3 +8,11 @@ losttreasure:
   diamond-max: 6
   emerald-min: 3
   emerald-max: 8
+
+  # Premio adicional opcional. Usa el ID numérico del objeto Bedrock/Nukkit.
+  # Con id: 0 o chance: 0 queda desactivado.
+  bonus-item-id: 0
+  bonus-item-damage: 0
+  bonus-item-chance-percent: 0
+  bonus-item-min: 1
+  bonus-item-max: 1

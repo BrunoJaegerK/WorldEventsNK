@@ -117,9 +117,9 @@ public final class EventStorage {
             return;
         }
 
-        boolean placingPhase = "placing".equalsIgnoreCase(pending.getString("treasure.phase", ""));
-        boolean matchingMarker = ownsTreasureChest(level, x, y, z, marker);
-        if (level.getBlock(x, y, z, false).getId() == Block.CHEST && (placingPhase || matchingMarker)) {
+        // El registro persistente identifica la unica coordenada donde el plugin coloco su cofre.
+        // Durante el cierre no hay jugadores que puedan reemplazarlo; se limpia si sigue siendo un cofre.
+        if (level.getBlock(x, y, z, false).getId() == Block.CHEST) {
             BlockEntity entity = level.getBlockEntity(new Vector3(x, y, z));
             if (entity != null) entity.close();
             level.setBlock(x, y, z, Block.get(Block.AIR), false, true);

@@ -25,6 +25,8 @@ meteorfall:
 
 losttreasure:
   claim-radius: 5
+  hint-interval-seconds: 120
+  maximum-hints: 3
 
 economy:
   enabled: true
@@ -34,6 +36,9 @@ economy:
 protection:
   enabled: true
   fail-safe: true
+
+statistics:
+  enabled: true
 
 performance:
   max-block-changes-per-event: 150

@@ -11,6 +11,8 @@ import com.brunojaeger.worldevents.event.treasure.LostTreasureEvent;
 import com.brunojaeger.worldevents.integration.economy.EconomyManager;
 import com.brunojaeger.worldevents.integration.protection.ProtectionManager;
 import com.brunojaeger.worldevents.reward.RewardManager;
+import com.brunojaeger.worldevents.statistics.StatisticsManager;
+import com.brunojaeger.worldevents.storage.EventPersistence;
 import com.brunojaeger.worldevents.world.SafeLocationFinder;
 
 import java.io.File;
@@ -25,6 +27,8 @@ public final class EventManager {
     private final EconomyManager economy;
     private final RewardManager rewards;
     private final Config eventDefinitions;
+    private final EventPersistence persistence;
+    private final StatisticsManager statistics;
     private final EventRegistry registry = new EventRegistry();
     private WorldEvent activeEvent;
     private int automaticCountdown;
@@ -35,8 +39,11 @@ public final class EventManager {
         this.economy = new EconomyManager(plugin);
         this.rewards = new RewardManager(plugin, economy);
         this.eventDefinitions = new Config(new File(plugin.getDataFolder(), "events.yml"), Config.YAML);
+        this.persistence = new EventPersistence(plugin);
+        this.statistics = new StatisticsManager(plugin);
+        persistence.recover();
         registry.register("meteorfall", () -> new MeteorFallEvent(plugin, locations));
-        registry.register("losttreasure", () -> new LostTreasureEvent(plugin, locations, rewards));
+        registry.register("losttreasure", () -> new LostTreasureEvent(plugin, locations, rewards, persistence));
         resetAutomaticCountdown();
     }
 
@@ -50,10 +57,12 @@ public final class EventManager {
 
         WorldEvent event = registry.create(normalized);
         if (event == null || !event.start()) {
+            statistics.recordFailure(normalized);
             plugin.getLogger().warning("No se pudo iniciar " + normalized + ": no se encontró una ubicación válida.");
             return false;
         }
         activeEvent = event;
+        statistics.recordStart(normalized);
         return true;
     }
 
@@ -78,18 +87,16 @@ public final class EventManager {
 
     public void tick() {
         if (!plugin.getConfig().getBoolean("events.enabled", true)) {
-            if (activeEvent != null) {
-                activeEvent.stop();
-                activeEvent = null;
-                resetAutomaticCountdown();
-            }
+            if (activeEvent != null) stop();
             return;
         }
         if (activeEvent != null) {
             activeEvent.tick();
             if (activeEvent.isFinished()) {
-                plugin.getServer().broadcastMessage("§6[WorldEvents] §aEl evento "
-                        + activeEvent.getId() + " ha finalizado.");
+                String id = activeEvent.getId();
+                if (activeEvent.getState() == EventState.COMPLETED) statistics.recordComplete(id);
+                else statistics.recordFailure(id);
+                plugin.getServer().broadcastMessage(plugin.getMessages().get("event-finished").replace("{event}", id));
                 activeEvent = null;
                 resetAutomaticCountdown();
             }
@@ -109,14 +116,18 @@ public final class EventManager {
 
     public boolean stop() {
         if (activeEvent == null) return false;
+        String id = activeEvent.getId();
         activeEvent.stop();
+        statistics.recordStopped(id);
         activeEvent = null;
         resetAutomaticCountdown();
         return true;
     }
 
     public boolean claimTreasure(Player player) {
-        return activeEvent instanceof LostTreasureEvent && ((LostTreasureEvent) activeEvent).claim(player);
+        if (!(activeEvent instanceof LostTreasureEvent treasure) || !treasure.claim(player)) return false;
+        statistics.recordClaim("losttreasure", player.getName());
+        return true;
     }
 
     public boolean isTreasureBlock(Level level, int x, int y, int z) {
@@ -132,6 +143,7 @@ public final class EventManager {
     public WorldEvent getActiveEvent() { return activeEvent; }
     public boolean hasActiveEvent() { return activeEvent != null; }
     public EventRegistry getRegistry() { return registry; }
+    public StatisticsManager getStatistics() { return statistics; }
 
     public void reload() {
         plugin.reloadConfig();
@@ -143,8 +155,11 @@ public final class EventManager {
 
     public void shutdown() {
         if (activeEvent != null) {
+            String id = activeEvent.getId();
             activeEvent.stop();
+            statistics.recordStopped(id);
             activeEvent = null;
         }
+        persistence.shutdown();
     }
 }

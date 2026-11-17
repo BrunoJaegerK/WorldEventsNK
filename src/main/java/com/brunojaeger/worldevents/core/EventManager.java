@@ -42,7 +42,7 @@ public final class EventManager {
         this.persistence = new EventPersistence(plugin);
         this.statistics = new StatisticsManager(plugin);
         persistence.recover();
-        registry.register("meteorfall", () -> new MeteorFallEvent(plugin, locations));
+        registry.register("meteorfall", () -> new MeteorFallEvent(plugin, locations, rewards));
         registry.register("losttreasure", () -> new LostTreasureEvent(plugin, locations, rewards, persistence));
         resetAutomaticCountdown();
     }
@@ -127,6 +127,12 @@ public final class EventManager {
     public boolean claimTreasure(Player player) {
         if (!(activeEvent instanceof LostTreasureEvent treasure) || !treasure.claim(player)) return false;
         statistics.recordClaim("losttreasure", player.getName());
+        return true;
+    }
+
+    public boolean claimMeteorCore(Player player, Block block) {
+        if (!(activeEvent instanceof MeteorFallEvent meteor) || !meteor.claimCore(player, block)) return false;
+        statistics.recordClaim("meteorfall", player.getName());
         return true;
     }
 

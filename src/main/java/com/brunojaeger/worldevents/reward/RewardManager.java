@@ -43,10 +43,10 @@ public final class RewardManager {
         int max = Math.max(min, rewards.getInt(maxPath, defaultMax));
         if (max <= 0) return;
         Item item = Item.get(itemId, 0, ThreadLocalRandom.current().nextInt(min, max + 1));
-        if (item == null || item.getId() == Item.AIR) return;
+        if (item == null || item.getId() == 0) return;
         Item[] leftovers = player.getInventory().addItem(item);
         for (Item leftover : leftovers) {
-            if (leftover != null && leftover.getId() != Item.AIR) {
+            if (leftover != null && leftover.getId() != 0) {
                 player.getLevel().dropItem(player.getPosition(), leftover);
             }
         }

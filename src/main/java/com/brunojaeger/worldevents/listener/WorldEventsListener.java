@@ -9,9 +9,7 @@ import com.brunojaeger.worldevents.WorldEventsNK;
 public final class WorldEventsListener implements Listener {
     private final WorldEventsNK plugin;
 
-    public WorldEventsListener(WorldEventsNK plugin) {
-        this.plugin = plugin;
-    }
+    public WorldEventsListener(WorldEventsNK plugin) { this.plugin = plugin; }
 
     @EventHandler
     public void onTreasureBreak(BlockBreakEvent event) {
@@ -24,14 +22,17 @@ public final class WorldEventsListener implements Listener {
     }
 
     @EventHandler
-    public void onTreasureInteract(PlayerInteractEvent event) {
-        if (event.getBlock() == null) return;
-        if (event.getAction() != PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK) return;
+    public void onEventInteract(PlayerInteractEvent event) {
+        if (event.getBlock() == null || event.getAction() != PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK) return;
+        if (plugin.getEventManager().claimMeteorCore(event.getPlayer(), event.getBlock())) {
+            event.setCancelled(true);
+            return;
+        }
         if (plugin.getEventManager().isTreasureBlock(event.getBlock().getLevel(),
                 event.getBlock().getFloorX(), event.getBlock().getFloorY(), event.getBlock().getFloorZ())) {
             event.setCancelled(true);
             if (!plugin.getEventManager().claimTreasure(event.getPlayer())) {
-                event.getPlayer().sendMessage("§cNo se pudo reclamar el tesoro.");
+                event.getPlayer().sendMessage(plugin.getMessages().get("treasure-too-far"));
             }
         }
     }

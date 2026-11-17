@@ -50,7 +50,6 @@ public final class LostTreasureEvent implements WorldEvent {
             state = EventState.FAILED;
             return false;
         }
-        // Write recovery intent before placing the temporary block.
         if (!persistence.beginTreasure(location.getLevel(), location.getX(), chestY, location.getZ())) {
             state = EventState.FAILED;
             plugin.getLogger().warning("LostTreasure cancelado: no se pudo guardar el registro de recuperación.");
@@ -86,11 +85,16 @@ public final class LostTreasureEvent implements WorldEvent {
         Block current = location.getLevel().getBlock(location.getX(), chestY, location.getZ(), false);
         if (current == null || current.getId() != Block.CHEST) return false;
 
-        // Remove and journal-clear before payout: a crash can lose a payout, but cannot duplicate it.
         claimed = true;
-        location.getLevel().setBlock(location.getX(), chestY, location.getZ(), Block.get(Block.AIR), false, true);
+        boolean removed = location.getLevel().setBlock(location.getX(), chestY, location.getZ(),
+                Block.get(Block.AIR), false, true);
+        if (!removed) {
+            claimed = false;
+            return false;
+        }
         chestPlaced = false;
         persistence.clearTreasure();
+        // The chest and recovery journal are cleared before payout to prevent replay after a crash.
         rewards.give(getId(), player);
         player.sendMessage(plugin.getMessages().get("treasure-claimed"));
         state = EventState.COMPLETED;
@@ -128,10 +132,13 @@ public final class LostTreasureEvent implements WorldEvent {
         }
         int y = location.getY() + 1;
         Block current = location.getLevel().getBlock(location.getX(), y, location.getZ(), false);
-        if (current != null && current.getId() == Block.CHEST
-                && plugin.getProtectionManager().canModify(location.getLevel(), location.getX(), y,
-                location.getZ(), getId())) {
-            location.getLevel().setBlock(location.getX(), y, location.getZ(), Block.get(Block.AIR), false, true);
+        if (current != null && current.getId() == Block.CHEST) {
+            boolean removed = location.getLevel().setBlock(location.getX(), y, location.getZ(),
+                    Block.get(Block.AIR), false, true);
+            if (!removed) {
+                persistence.recover();
+                return;
+            }
         }
         chestPlaced = false;
         persistence.clearTreasure();

@@ -8,7 +8,6 @@ import com.brunojaeger.worldevents.integration.protection.ProtectionManager;
 import com.brunojaeger.worldevents.listener.WorldEventsListener;
 import com.brunojaeger.worldevents.statistics.StatisticsManager;
 import com.brunojaeger.worldevents.storage.EventStorage;
-import com.brunojaeger.worldevents.storage.TreasureRecoveryStorage;
 import com.brunojaeger.worldevents.util.MessageUtils;
 
 public final class WorldEventsNK extends PluginBase {
@@ -27,7 +26,6 @@ public final class WorldEventsNK extends PluginBase {
         saveResource("integrations.yml", false);
         saveResource("lang/es_ES.yml", false);
 
-        TreasureRecoveryStorage.recover(this);
         messages = new MessageUtils(this);
         protectionManager = new ProtectionManager(this);
         eventStorage = new EventStorage(this);

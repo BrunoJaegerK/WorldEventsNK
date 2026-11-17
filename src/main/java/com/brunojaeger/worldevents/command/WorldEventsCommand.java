@@ -23,7 +23,14 @@ public final class WorldEventsCommand {
         EventManager manager = plugin.getEventManager();
         switch (args[0].toLowerCase(Locale.ROOT)) {
             case "list" -> {
-                sender.sendMessage(plugin.getMessages().get("event-list"));
+                sender.sendMessage(plugin.getMessages().get("event-list-header"));
+                for (String id : manager.getRegistry().getFactories().keySet()) {
+                    String status = plugin.getMessages().get(manager.isEventEnabled(id)
+                            ? "event-enabled" : "event-disabled");
+                    sender.sendMessage(plugin.getMessages().format("event-list-entry",
+                            "{event}", id, "{status}", status,
+                            "{weight}", Integer.toString(manager.getEventWeight(id))));
+                }
                 return true;
             }
             case "status" -> {

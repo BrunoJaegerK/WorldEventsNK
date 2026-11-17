@@ -120,8 +120,7 @@ public final class LostTreasureEvent implements WorldEvent {
             hint = "X " + (location.getX() - offset) + " a " + (location.getX() + offset)
                     + ", Z " + (location.getZ() - offset) + " a " + (location.getZ() + offset);
         }
-        plugin.getServer().broadcastMessage(plugin.getMessages().get("treasure-hint")
-                .replace("{hint}", hint));
+        plugin.getServer().broadcastMessage(plugin.getMessages().format("treasure-hint", "{hint}", hint));
         hintsSent++;
     }
 

@@ -3,6 +3,9 @@ package com.brunojaeger.worldevents.event.treasure;
 import cn.nukkit.Player;
 import cn.nukkit.block.Block;
 import cn.nukkit.blockentity.BlockEntityChest;
+import cn.nukkit.level.Sound;
+import cn.nukkit.level.particle.HappyVillagerParticle;
+import cn.nukkit.math.Vector3;
 import com.brunojaeger.worldevents.WorldEventsNK;
 import com.brunojaeger.worldevents.core.EventState;
 import com.brunojaeger.worldevents.event.WorldEvent;
@@ -93,6 +96,10 @@ public final class LostTreasureEvent implements WorldEvent {
         remainingSeconds = Math.max(30, plugin.getConfig().getInt("losttreasure.duration-seconds",
                 plugin.getConfig().getInt("events.duration-seconds", 600)));
         state = EventState.ACTIVE;
+        if (visualEffectsEnabled()) {
+            location.getLevel().addSound(chestPosition(), Sound.RANDOM_CHESTOPEN, 0.8f, 1.0f);
+            renderTreasureMarker();
+        }
         plugin.getServer().broadcastMessage(plugin.getMessages().format("treasure-announcement",
                 "{world}", location.getLevel().getName()));
         return true;
@@ -129,6 +136,9 @@ public final class LostTreasureEvent implements WorldEvent {
             // Mantener el estado de propiedad en memoria hasta que el listener de carga
             // pueda retirar el cofre y limpiar el registro persistente.
         }
+        if (visualEffectsEnabled()) {
+            location.getLevel().addSound(chestPosition(), Sound.RANDOM_CHESTCLOSED, 0.8f, 1.0f);
+        }
         state = EventState.COMPLETED;
         return true;
     }
@@ -142,6 +152,28 @@ public final class LostTreasureEvent implements WorldEvent {
             removeChestIfUnchanged();
             state = EventState.COMPLETED;
             plugin.getServer().broadcastMessage("§7El tesoro perdido ha desaparecido sin ser reclamado.");
+        }
+    }
+
+    private boolean visualEffectsEnabled() {
+        return plugin.getConfig().getBoolean("losttreasure.visual-effects", true);
+    }
+
+    private Vector3 chestPosition() {
+        return new Vector3(location.getX() + 0.5, location.getY() + 1.2, location.getZ() + 0.5);
+    }
+
+    /** Partículas discretas alrededor del cofre; no modifica bloques ni chunks. */
+    private void renderTreasureMarker() {
+        if (location == null || location.getLevel() == null) return;
+        double centerX = location.getX() + 0.5;
+        double centerY = location.getY() + 1.35;
+        double centerZ = location.getZ() + 0.5;
+        for (int i = 0; i < 8; i++) {
+            double angle = Math.PI * 2.0 * i / 8.0;
+            Vector3 point = new Vector3(centerX + Math.cos(angle) * 0.8,
+                    centerY + (i % 2 == 0 ? 0.25 : 0.0), centerZ + Math.sin(angle) * 0.8);
+            location.getLevel().addParticle(new HappyVillagerParticle(point));
         }
     }
 
@@ -170,6 +202,10 @@ public final class LostTreasureEvent implements WorldEvent {
             hint = "X " + minX + " a " + maxX + ", Z " + minZ + " a " + maxZ;
         }
         plugin.getServer().broadcastMessage(plugin.getMessages().format("treasure-hint", "{hint}", hint));
+        if (visualEffectsEnabled()) {
+            renderTreasureMarker();
+            location.getLevel().addSound(chestPosition(), Sound.RANDOM_ORB, 0.7f, 1.2f);
+        }
         hintsSent++;
     }
 

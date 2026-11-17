@@ -29,7 +29,8 @@ public final class WorldEventsCommand {
                             ? "event-enabled" : "event-disabled");
                     sender.sendMessage(plugin.getMessages().format("event-list-entry",
                             "{event}", id, "{status}", status,
-                            "{weight}", Integer.toString(manager.getEventWeight(id))));
+                            "{weight}", Integer.toString(manager.getEventWeight(id)),
+                            "{cooldown}", Integer.toString(manager.getCooldownRemainingSeconds(id))));
                 }
                 return true;
             }
@@ -44,7 +45,10 @@ public final class WorldEventsCommand {
                         return true;
                     }
                 }
-                limit = Math.max(1, Math.min(10, limit));
+                if (limit < 1 || limit > 10) {
+                    sender.sendMessage(plugin.getMessages().get("history-usage"));
+                    return true;
+                }
                 sender.sendMessage(plugin.getMessages().get("history-title"));
                 java.util.List<String> entries = plugin.getHistoryManager().getRecent(limit);
                 if (entries.isEmpty()) sender.sendMessage(plugin.getMessages().get("history-empty"));
@@ -53,8 +57,15 @@ public final class WorldEventsCommand {
             }
             case "status" -> {
                 WorldEvent event = manager.getActiveEvent();
-                if (event == null) sender.sendMessage(plugin.getMessages().get("status-none"));
-                else sender.sendMessage(plugin.getMessages().format("event-status",
+                if (event == null) {
+                    sender.sendMessage(plugin.getMessages().get("status-none"));
+                    if (plugin.getConfig().getBoolean("events.automatic", true)) {
+                        sender.sendMessage(plugin.getMessages().format("status-next",
+                                "{remaining}", Integer.toString(manager.getAutomaticCountdown())));
+                    } else {
+                        sender.sendMessage(plugin.getMessages().get("status-auto-disabled"));
+                    }
+                } else sender.sendMessage(plugin.getMessages().format("event-status",
                         "{event}", event.getId(), "{state}", event.getState().name(),
                         "{remaining}", Integer.toString(event.getRemainingSeconds())));
                 return true;
@@ -74,7 +85,9 @@ public final class WorldEventsCommand {
                 if (!started) {
                     sender.sendMessage(manager.hasActiveEvent()
                             ? plugin.getMessages().get("event-already-active")
-                            : plugin.getMessages().get("no-safe-location"));
+                            : (requested.equals("random")
+                            ? plugin.getMessages().get("event-random-unavailable")
+                            : plugin.getMessages().get("no-safe-location")));
                 }
                 return true;
             }
@@ -111,7 +124,10 @@ public final class WorldEventsCommand {
                             return true;
                         }
                     }
-                    limit = Math.max(1, Math.min(10, limit));
+                    if (limit < 1 || limit > 10) {
+                        sender.sendMessage(plugin.getMessages().get("stats-top-usage"));
+                        return true;
+                    }
                     sender.sendMessage(plugin.getMessages().get("stats-top-title"));
                     java.util.List<String> ranking = plugin.getStatisticsManager().getTopTreasureClaims(limit);
                     if (ranking.isEmpty()) {

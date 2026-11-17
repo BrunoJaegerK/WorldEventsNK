@@ -33,6 +33,24 @@ public final class WorldEventsCommand {
                 }
                 return true;
             }
+            case "history" -> {
+                if (!sender.hasPermission("worldevents.stats")) return noPermission(sender);
+                int limit = 5;
+                if (args.length >= 2) {
+                    try {
+                        limit = Integer.parseInt(args[1]);
+                    } catch (NumberFormatException ignored) {
+                        sender.sendMessage(plugin.getMessages().get("history-usage"));
+                        return true;
+                    }
+                }
+                limit = Math.max(1, Math.min(10, limit));
+                sender.sendMessage(plugin.getMessages().get("history-title"));
+                java.util.List<String> entries = plugin.getHistoryManager().getRecent(limit);
+                if (entries.isEmpty()) sender.sendMessage(plugin.getMessages().get("history-empty"));
+                else for (String entry : entries) sender.sendMessage(plugin.getMessages().format("history-entry", "{entry}", entry));
+                return true;
+            }
             case "status" -> {
                 WorldEvent event = manager.getActiveEvent();
                 if (event == null) sender.sendMessage(plugin.getMessages().get("status-none"));

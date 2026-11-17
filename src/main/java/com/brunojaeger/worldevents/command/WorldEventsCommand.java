@@ -73,6 +73,28 @@ public final class WorldEventsCommand {
                 }
                 return true;
             }
+            case "stats" -> {
+                if (!sender.hasPermission("worldevents.stats")) return noPermission(sender);
+                Player target;
+                if (args.length > 1) {
+                    target = plugin.getServer().getPlayer(args[1]);
+                    if (target == null) {
+                        sender.sendMessage("§cEse jugador no está conectado.");
+                        return true;
+                    }
+                } else if (sender instanceof Player player) {
+                    target = player;
+                } else {
+                    sender.sendMessage("§6WorldEventsNK §7| Reclamaciones de tesoros: §e"
+                            + plugin.getStatisticsManager().getTotalTreasureClaims());
+                    return true;
+                }
+                sender.sendMessage("§6WorldEventsNK §7| §f" + target.getName()
+                        + " §7ha reclamado §e" + plugin.getStatisticsManager().getTreasureClaims(target)
+                        + " §7tesoros. Total global: §e"
+                        + plugin.getStatisticsManager().getTotalTreasureClaims());
+                return true;
+            }
             case "reload" -> {
                 if (!sender.hasPermission("worldevents.admin")) return noPermission(sender);
                 manager.reload();

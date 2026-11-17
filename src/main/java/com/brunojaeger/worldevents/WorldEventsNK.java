@@ -6,6 +6,8 @@ import com.brunojaeger.worldevents.core.EventManager;
 import com.brunojaeger.worldevents.core.EventScheduler;
 import com.brunojaeger.worldevents.integration.protection.ProtectionManager;
 import com.brunojaeger.worldevents.listener.WorldEventsListener;
+import com.brunojaeger.worldevents.statistics.StatisticsManager;
+import com.brunojaeger.worldevents.storage.EventStorage;
 import com.brunojaeger.worldevents.storage.TreasureRecoveryStorage;
 import com.brunojaeger.worldevents.util.MessageUtils;
 
@@ -14,6 +16,8 @@ public final class WorldEventsNK extends PluginBase {
     private EventScheduler eventScheduler;
     private ProtectionManager protectionManager;
     private MessageUtils messages;
+    private EventStorage eventStorage;
+    private StatisticsManager statisticsManager;
 
     @Override
     public void onEnable() {
@@ -26,7 +30,10 @@ public final class WorldEventsNK extends PluginBase {
         TreasureRecoveryStorage.recover(this);
         messages = new MessageUtils(this);
         protectionManager = new ProtectionManager(this);
-        eventManager = new EventManager(this, protectionManager);
+        eventStorage = new EventStorage(this);
+        eventStorage.recover();
+        statisticsManager = new StatisticsManager(this);
+        eventManager = new EventManager(this, protectionManager, eventStorage, statisticsManager);
         getServer().getPluginManager().registerEvents(new WorldEventsListener(this), this);
         eventScheduler = new EventScheduler(this, eventManager);
         eventScheduler.start();
@@ -51,4 +58,6 @@ public final class WorldEventsNK extends PluginBase {
     public EventManager getEventManager() { return eventManager; }
     public ProtectionManager getProtectionManager() { return protectionManager; }
     public MessageUtils getMessages() { return messages; }
+    public EventStorage getEventStorage() { return eventStorage; }
+    public StatisticsManager getStatisticsManager() { return statisticsManager; }
 }

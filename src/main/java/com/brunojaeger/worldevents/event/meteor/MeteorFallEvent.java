@@ -129,8 +129,13 @@ public final class MeteorFallEvent implements WorldEvent {
     private void rollback(Level level, List<BlockChange> applied) {
         for (int i = applied.size() - 1; i >= 0; i--) {
             BlockChange change = applied.get(i);
-            level.setBlock(change.x, change.y, change.z,
-                    Block.get(change.oldId, change.oldMeta), false, true);
+            try {
+                level.setBlock(change.x, change.y, change.z,
+                        Block.get(change.oldId, change.oldMeta), false, true);
+            } catch (RuntimeException error) {
+                plugin.getLogger().error("No se pudo restaurar el bloque (" + change.x + ", "
+                        + change.y + ", " + change.z + ") durante el rollback.", error);
+            }
         }
     }
 

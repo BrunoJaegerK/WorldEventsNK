@@ -42,6 +42,22 @@ public final class StatisticsManager {
     }
 
     /**
+     * Busca las reclamaciones por nombre guardado, incluso si el jugador está desconectado.
+     * Devuelve null cuando no existe un registro con ese nombre.
+     */
+    public Integer getTreasureClaimsByName(String playerName) {
+        if (!plugin.getConfig().getBoolean("statistics.enabled", true)) return 0;
+        ConfigSection players = statistics.getSection("players");
+        for (Map.Entry<String, Object> entry : players.entrySet()) {
+            if (!(entry.getValue() instanceof ConfigSection data)) continue;
+            if (data.getString("name", "").equalsIgnoreCase(playerName)) {
+                return Math.max(0, data.getInt("treasure-claims", 0));
+            }
+        }
+        return null;
+    }
+
+    /**
      * Devuelve las mejores reclamaciones guardadas, incluyendo jugadores desconectados.
      * Los registros sin reclamaciones válidas se omiten.
      */

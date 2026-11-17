@@ -9,4 +9,5 @@ public interface WorldEvent {
     void tick();
     void stop();
     boolean isFinished();
+    default int getRemainingSeconds() { return 0; }
 }

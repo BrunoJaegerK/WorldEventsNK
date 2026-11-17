@@ -4,7 +4,7 @@ import cn.nukkit.block.Block;
 import cn.nukkit.blockentity.BlockEntity;
 import cn.nukkit.blockentity.BlockEntityChest;
 import cn.nukkit.level.Level;
-import cn.nukkit.level.format.BaseFullChunk;
+import cn.nukkit.level.format.generic.BaseFullChunk;
 import cn.nukkit.math.Vector3;
 import cn.nukkit.utils.Config;
 import com.brunojaeger.worldevents.WorldEventsNK;

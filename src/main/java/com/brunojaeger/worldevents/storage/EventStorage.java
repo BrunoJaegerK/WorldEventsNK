@@ -121,8 +121,9 @@ public final class EventStorage {
      * Reintenta la limpieza cuando vuelve a cargarse el chunk que contiene el tesoro.
      */
     public void recoverIfChunk(FullChunk chunk) {
+        String phase = pending.getString("treasure.phase", "");
         if (chunk == null || !pending.getBoolean("treasure.active", false)
-                || !"cleanup".equalsIgnoreCase(pending.getString("treasure.phase", ""))) return;
+                || (!"cleanup".equalsIgnoreCase(phase) && !"placing".equalsIgnoreCase(phase))) return;
         Level level = chunk.getProvider().getLevel();
         if (level == null || !level.getName().equals(pending.getString("treasure.world", ""))) return;
         int x = pending.getInt("treasure.x");

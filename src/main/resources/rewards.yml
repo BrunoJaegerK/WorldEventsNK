@@ -1,3 +1,5 @@
+enabled: true
+
 losttreasure:
   money-min: 150
   money-max: 400

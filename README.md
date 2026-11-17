@@ -24,6 +24,7 @@ Plugin de eventos dinamicos para **NukkitPetteriM1Edition (PM1E)**.
 - El cofre no puede romperse normalmente durante el evento.
 - Se elimina al reclamar, expirar o detener el evento.
 - El registro permite recuperar y limpiar el cofre tras un cierre abrupto, sin borrar cofres ajenos.
+- Si el chunk se descarga antes de expirar o detener el evento, la limpieza queda persistida y se reintenta cuando PM1E vuelve a inicializar ese chunk.
 
 ## Integraciones
 

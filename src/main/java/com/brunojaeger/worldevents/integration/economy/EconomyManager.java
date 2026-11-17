@@ -84,8 +84,12 @@ public final class EconomyManager {
             try {
                 if (provider.isAvailable()) return provider.deposit(player, amount);
             } catch (RuntimeException error) {
+                // No se hace fallback tras una excepción: el proveedor podría haber
+                // aplicado el depósito antes de fallar y un segundo pago duplicaría dinero.
                 plugin.getLogger().warning("El proveedor económico " + provider.getName()
-                        + " falló; se intentará el proveedor configurado: " + error.getMessage());
+                        + " falló; se cancela el depósito para evitar una posible duplicación: "
+                        + error.getMessage());
+                return false;
             }
         }
         if (economy == null || addMoney == null) return false;

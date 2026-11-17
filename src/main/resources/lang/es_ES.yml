@@ -8,6 +8,7 @@ event-list-entry: "&e{event}&7: {status} &8(peso: {weight}, enfriamiento: {coold
 event-enabled: "&ahabilitado"
 event-disabled: "&cdeshabilitado"
 event-already-active: "&cYa hay un evento activo."
+meteorfall-warning: "&c¡Meteorito detectado en &f{world}&c! Impacto en &e{seconds}s &7(X: {x}, Z: {z})."
 event-started: "&aHa comenzado &e{event}&a en &f{world} &7(X: {x}, Z: {z})."
 treasure-announcement: "&e¡Se ha escondido un tesoro en &f{world}&e! Busca las pistas progresivas."
 event-finished: "&aEl evento &e{event} &aha finalizado."

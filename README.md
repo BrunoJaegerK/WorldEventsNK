@@ -13,8 +13,8 @@ Plugin de eventos dinamicos para **NukkitPetteriM1Edition (PM1E)**.
 - Busca una ubicacion segura en un mundo con jugadores conectados.
 - Solo evalua chunks que ya estan cargados; no genera terreno para buscar ubicaciones.
 - Valida el volumen completo antes de cambiar bloques.
-- Rechaza construcciones y ubicaciones denegadas por proveedores de proteccion.
-- Genera un crater permanente, con borde de roca y nucleo de obsidiana.
+- Rechaza volumenes con bloques no naturales y ubicaciones denegadas por proveedores de proteccion.
+- Genera un crater permanente, con borde de roca, vetas de hierro/oro/diamante y nucleo de obsidiana.
 - Si falla una escritura durante el impacto, intenta restaurar los bloques modificados.
 
 ### LostTreasure
@@ -64,7 +64,7 @@ El JAR se genera en `target/WorldEventsNK.jar`. GitHub Actions construye primero
 
 ## Seguridad y limites
 
-- MeteorFall modifica el mundo permanentemente. Excluye los mundos donde no quieras crateres.
+- MeteorFall modifica el mundo permanentemente. Excluye los mundos donde no quieras crateres. Una construccion hecha enteramente con bloques naturales no se puede distinguir del terreno solo mediante IDs de bloque; protege esas zonas con el adaptador de regiones.
 - La proteccion generica solo puede respetar regiones de terceros cuando existe un adaptador registrado para ese plugin.
 - La seleccion considera todos los mundos cargados y no excluidos. Usa jugadores como referencia cuando los hay y el spawn en mundos sin jugadores; nunca fuerza la generacion de chunks.
 - No se ha validado aun el comportamiento visual y de juego dentro de una instancia real de servidor; la compilacion automatizada valida compatibilidad de codigo/API, no una prueba de gameplay.

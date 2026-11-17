@@ -1,11 +1,14 @@
 package com.brunojaeger.worldevents.event.meteor;
 
+import cn.nukkit.Player;
 import cn.nukkit.block.Block;
 import cn.nukkit.level.Level;
 import cn.nukkit.level.format.FullChunk;
 import com.brunojaeger.worldevents.WorldEventsNK;
 import com.brunojaeger.worldevents.core.EventState;
 import com.brunojaeger.worldevents.event.WorldEvent;
+import com.brunojaeger.worldevents.reward.RewardManager;
+import com.brunojaeger.worldevents.statistics.StatisticsManager;
 import com.brunojaeger.worldevents.world.EventLocation;
 import com.brunojaeger.worldevents.world.SafeLocationFinder;
 
@@ -15,13 +18,22 @@ import java.util.List;
 public final class MeteorFallEvent implements WorldEvent {
     private final WorldEventsNK plugin;
     private final SafeLocationFinder locations;
+    private final RewardManager rewards;
+    private final StatisticsManager statistics;
     private EventState state = EventState.IDLE;
     private EventLocation location;
     private int remainingSeconds;
+    private int coreX;
+    private int coreY;
+    private int coreZ;
+    private boolean coreClaimed;
 
-    public MeteorFallEvent(WorldEventsNK plugin, SafeLocationFinder locations) {
+    public MeteorFallEvent(WorldEventsNK plugin, SafeLocationFinder locations,
+                           RewardManager rewards, StatisticsManager statistics) {
         this.plugin = plugin;
         this.locations = locations;
+        this.rewards = rewards;
+        this.statistics = statistics;
     }
 
     @Override public String getId() { return "meteorfall"; }
@@ -35,6 +47,7 @@ public final class MeteorFallEvent implements WorldEvent {
             state = EventState.FAILED;
             return false;
         }
+        coreClaimed = false;
         remainingSeconds = Math.max(0, Math.min(120,
                 plugin.getConfig().getInt("meteorfall.warning-seconds", 10)));
         state = EventState.PREPARING;
@@ -103,13 +116,13 @@ public final class MeteorFallEvent implements WorldEvent {
         int centerZ = location.getZ();
         int centerSurface = level.getChunkIfLoaded(centerX >> 4, centerZ >> 4)
                 .getHighestBlockAt(centerX & 15, centerZ & 15, false);
-        int coreY = centerSurface - depth;
-        Block coreOriginal = level.getBlock(centerX, coreY, centerZ, false);
+        int candidateCoreY = centerSurface - depth;
+        Block coreOriginal = level.getBlock(centerX, candidateCoreY, centerZ, false);
         if (coreOriginal == null || !isNatural(coreOriginal.getId())
-                || !plugin.getProtectionManager().canModify(level, centerX, coreY, centerZ, getId())) {
+                || !plugin.getProtectionManager().canModify(level, centerX, candidateCoreY, centerZ, getId())) {
             return reject("no se puede colocar el nucleo del meteorito de forma segura");
         }
-        changes.add(new BlockChange(centerX, coreY, centerZ,
+        changes.add(new BlockChange(centerX, candidateCoreY, centerZ,
                 coreOriginal.getId(), coreOriginal.getDamage(), Block.OBSIDIAN));
         if (changes.size() > maxChanges) return reject("se excedio el limite de cambios");
 
@@ -122,12 +135,15 @@ public final class MeteorFallEvent implements WorldEvent {
                 }
                 applied.add(change);
             }
-            return true;
         } catch (RuntimeException error) {
             rollback(level, applied);
             plugin.getLogger().error("Excepcion al aplicar MeteorFall; se intento revertir el terreno.", error);
             return reject("una excepcion interrumpio el impacto");
         }
+        coreX = centerX;
+        coreY = candidateCoreY;
+        coreZ = centerZ;
+        return true;
     }
 
     private void rollback(Level level, List<BlockChange> applied) {
@@ -156,6 +172,18 @@ public final class MeteorFallEvent implements WorldEvent {
         return id == Block.GRASS || id == Block.DIRT || id == Block.STONE
                 || id == Block.SAND || id == Block.GRAVEL || id == Block.NETHERRACK
                 || id == Block.END_STONE || id == Block.CLAY_BLOCK;
+    }
+
+    public boolean claimCore(Player player, Block block) {
+        if (state != EventState.ACTIVE || coreClaimed || player == null || block == null || location == null) return false;
+        if (player.getLevel() != location.getLevel() || block.getLevel() != location.getLevel()) return false;
+        if (block.getId() != Block.OBSIDIAN || block.getFloorX() != coreX
+                || block.getFloorY() != coreY || block.getFloorZ() != coreZ) return false;
+        coreClaimed = true;
+        statistics.recordMeteorCoreClaim(player);
+        rewards.give(getId(), player);
+        player.sendMessage(plugin.getMessages().get("meteor-core-claimed"));
+        return true;
     }
 
     private boolean impact() {

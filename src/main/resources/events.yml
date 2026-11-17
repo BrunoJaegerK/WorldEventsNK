@@ -1,9 +1,7 @@
 meteorfall:
   enabled: true
   weight: 50
-  duration-seconds: 600
 
 losttreasure:
   enabled: true
   weight: 50
-  duration-seconds: 600

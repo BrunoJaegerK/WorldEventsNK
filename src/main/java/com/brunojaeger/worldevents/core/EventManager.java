@@ -1,6 +1,7 @@
 package com.brunojaeger.worldevents.core;
 
 import cn.nukkit.Player;
+import cn.nukkit.block.Block;
 import cn.nukkit.level.Level;
 import cn.nukkit.utils.Config;
 import com.brunojaeger.worldevents.WorldEventsNK;
@@ -26,6 +27,7 @@ public final class EventManager {
     private final SafeLocationFinder locations;
     private final EconomyManager economy;
     private final RewardManager rewards;
+    private final StatisticsManager statistics;
     private final Config eventDefinitions;
     private final EventRegistry registry = new EventRegistry();
     private final EventHistoryManager history;
@@ -35,11 +37,12 @@ public final class EventManager {
     public EventManager(WorldEventsNK plugin, ProtectionManager protection, EventStorage storage, StatisticsManager statistics, EventHistoryManager history) {
         this.plugin = plugin;
         this.history = history;
+        this.statistics = statistics;
         this.locations = new SafeLocationFinder(plugin, protection);
         this.economy = new EconomyManager(plugin);
         this.rewards = new RewardManager(plugin, economy);
         this.eventDefinitions = new Config(new File(plugin.getDataFolder(), "events.yml"), Config.YAML);
-        registry.register("meteorfall", () -> new MeteorFallEvent(plugin, locations));
+        registry.register("meteorfall", () -> new MeteorFallEvent(plugin, locations, rewards, statistics));
         registry.register("losttreasure", () -> new LostTreasureEvent(plugin, locations, rewards, storage, statistics));
         resetAutomaticCountdown();
     }
@@ -175,6 +178,10 @@ public final class EventManager {
 
     public boolean claimTreasure(Player player) {
         return activeEvent instanceof LostTreasureEvent && ((LostTreasureEvent) activeEvent).claim(player);
+    }
+
+    public boolean claimMeteorCore(Player player, Block block) {
+        return activeEvent instanceof MeteorFallEvent meteor && meteor.claimCore(player, block);
     }
 
     public boolean isTreasureBlock(Level level, int x, int y, int z) {

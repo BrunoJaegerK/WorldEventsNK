@@ -16,18 +16,29 @@ depend: [WorldEventsNK]
 Registro desde `onEnable()`:
 
 ```java
-Plugin dependency = getServer().getPluginManager().getPlugin("WorldEventsNK");
-if (!(dependency instanceof WorldEventsNK worldEvents)) {
-    getLogger().warning("WorldEventsNK no está disponible.");
-    return;
-}
-worldEvents.getEventManager().getRegistry().register(
-    "my-event",
-    () -> new MyEvent(this)
-);
-```
+private WorldEventsNK worldEvents;
 
-El ID debe ser único. El registro rechaza duplicados para impedir que un plugin externo reemplace accidentalmente MeteorFall o LostTreasure.
+@Override
+public void onEnable() {
+    Plugin dependency = getServer().getPluginManager().getPlugin("WorldEventsNK");
+    if (!(dependency instanceof WorldEventsNK)) {
+        getLogger().warning("WorldEventsNK no está disponible.");
+        return;
+    }
+    worldEvents = (WorldEventsNK) dependency;
+    worldEvents.getEventManager().getRegistry().register(
+        "my-event",
+        () -> new MyEvent(this)
+    );
+}
+
+@Override
+public void onDisable() {
+    if (worldEvents != null && worldEvents.getEventManager() != null) {
+        worldEvents.getEventManager().getRegistry().unregister("my-event");
+    }
+}
+```
 
 ## Contrato
 

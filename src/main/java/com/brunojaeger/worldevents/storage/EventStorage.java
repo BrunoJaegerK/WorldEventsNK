@@ -48,6 +48,14 @@ public final class EventStorage {
         return pending.save();
     }
 
+    public void markTreasureCleanupPending() {
+        if (!pending.getBoolean("treasure.active", false)) return;
+        pending.set("treasure.phase", "cleanup");
+        if (!pending.save()) {
+            plugin.getLogger().warning("No se pudo persistir el reintento de limpieza del cofre.");
+        }
+    }
+
     public boolean isTreasureClaimed() {
         return pending.getBoolean("treasure.claimed", false);
     }
@@ -113,7 +121,8 @@ public final class EventStorage {
      * Reintenta la limpieza cuando vuelve a cargarse el chunk que contiene el tesoro.
      */
     public void recoverIfChunk(FullChunk chunk) {
-        if (chunk == null || !pending.getBoolean("treasure.active", false)) return;
+        if (chunk == null || !pending.getBoolean("treasure.active", false)
+                || !"cleanup".equalsIgnoreCase(pending.getString("treasure.phase", ""))) return;
         Level level = chunk.getProvider().getLevel();
         if (level == null || !level.getName().equals(pending.getString("treasure.world", ""))) return;
         int x = pending.getInt("treasure.x");

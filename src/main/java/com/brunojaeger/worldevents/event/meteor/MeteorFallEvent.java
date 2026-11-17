@@ -35,7 +35,8 @@ public final class MeteorFallEvent implements WorldEvent {
             state = EventState.FAILED;
             return false;
         }
-        remainingSeconds = Math.max(30, plugin.getConfig().getInt("events.duration-seconds", 600));
+        remainingSeconds = Math.max(30, plugin.getConfig().getInt("meteorfall.duration-seconds",
+                plugin.getConfig().getInt("events.duration-seconds", 600)));
         state = EventState.ACTIVE;
         plugin.getServer().broadcastMessage(plugin.getMessages().format("event-started",
                 "{event}", "MeteorFall", "{world}", location.getLevel().getName(),
@@ -161,6 +162,7 @@ public final class MeteorFallEvent implements WorldEvent {
 
     @Override public void stop() { if (state == EventState.ACTIVE) state = EventState.COMPLETED; }
     @Override public boolean isFinished() { return state == EventState.COMPLETED || state == EventState.FAILED; }
+    @Override public int getRemainingSeconds() { return Math.max(0, remainingSeconds); }
 
     private record BlockChange(int x, int y, int z, int oldId, int oldMeta, int newId) {
     }

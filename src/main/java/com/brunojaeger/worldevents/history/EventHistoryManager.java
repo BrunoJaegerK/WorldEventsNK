@@ -15,7 +15,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-/** Historial persistente y acotado de ejecuciones de eventos. */
+/** Historial persistente y acotado: una entrada por ejecución del evento. */
 public final class EventHistoryManager {
     private final WorldEventsNK plugin;
     private final Config history;
@@ -25,14 +25,40 @@ public final class EventHistoryManager {
         this.history = new Config(new File(plugin.getDataFolder(), "history.yml"), Config.YAML);
     }
 
-    public void record(String eventId, String result, EventLocation location) {
+    public synchronized void record(String eventId, String result, EventLocation location) {
         if (!plugin.getConfig().getBoolean("history.enabled", true)) return;
         long timestamp = System.currentTimeMillis();
-        String key = timestamp + "-" + UUID.randomUUID().toString().substring(0, 8);
-        String path = "entries." + key;
-        history.set(path + ".timestamp", timestamp);
+        String normalizedResult = result == null ? "UNKNOWN" : result.toUpperCase(Locale.ROOT);
+        String path = null;
+
+        // STARTED abre una ejecución. Su resultado terminal actualiza esa misma fila,
+        // evitando que /we history muestre dos registros para un solo evento.
+        if (!"STARTED".equals(normalizedResult)) {
+            ConfigSection entries = history.getSection("entries");
+            long latestStart = 0L;
+            for (Map.Entry<String, Object> entry : entries.entrySet()) {
+                if (!(entry.getValue() instanceof ConfigSection data)) continue;
+                if (!eventId.equalsIgnoreCase(data.getString("event", ""))
+                        || !"STARTED".equalsIgnoreCase(data.getString("result", ""))) continue;
+                long startedAt = data.getLong("started-at", data.getLong("timestamp", 0L));
+                if (startedAt >= latestStart) {
+                    latestStart = startedAt;
+                    path = "entries." + entry.getKey();
+                }
+            }
+        }
+
+        if (path == null) {
+            String key = timestamp + "-" + UUID.randomUUID().toString().substring(0, 8);
+            path = "entries." + key;
+            history.set(path + ".timestamp", timestamp);
+            if ("STARTED".equals(normalizedResult)) history.set(path + ".started-at", timestamp);
+        } else {
+            history.set(path + ".finished-at", timestamp);
+        }
+
         history.set(path + ".event", eventId);
-        history.set(path + ".result", result);
+        history.set(path + ".result", normalizedResult);
         if (location != null && location.getLevel() != null) {
             history.set(path + ".world", location.getLevel().getName());
             history.set(path + ".x", location.getX());
@@ -51,7 +77,6 @@ public final class EventHistoryManager {
                 plugin.getConfig().getInt("history.maximum-entries", 100)));
         ConfigSection entries = history.getSection("entries");
         if (entries.size() <= maximum) return;
-
         List<Map.Entry<String, Long>> ordered = new ArrayList<>();
         for (Map.Entry<String, Object> entry : entries.entrySet()) {
             if (!(entry.getValue() instanceof ConfigSection data)) continue;
@@ -59,36 +84,35 @@ public final class EventHistoryManager {
         }
         ordered.sort(Map.Entry.comparingByValue());
         int removeCount = ordered.size() - maximum;
-        for (int i = 0; i < removeCount; i++) {
-            history.remove("entries." + ordered.get(i).getKey());
-        }
+        for (int i = 0; i < removeCount; i++) history.remove("entries." + ordered.get(i).getKey());
         if (!history.save()) plugin.getLogger().warning("No se pudo limitar el tamaño de history.yml.");
     }
 
-    /** Marca temporal del último inicio exitoso de un evento; sobrevive reinicios. */
+    /** Conserva el inicio incluso cuando la ejecución ya terminó. */
     public long getLastStartTimestamp(String eventId) {
         long latest = 0L;
         ConfigSection entries = history.getSection("entries");
         for (Map.Entry<String, Object> entry : entries.entrySet()) {
             if (!(entry.getValue() instanceof ConfigSection data)) continue;
-            if (!eventId.equalsIgnoreCase(data.getString("event", ""))
-                    || !"STARTED".equalsIgnoreCase(data.getString("result", ""))) continue;
-            latest = Math.max(latest, data.getLong("timestamp", 0L));
+            if (!eventId.equalsIgnoreCase(data.getString("event", ""))) continue;
+            latest = Math.max(latest, data.getLong("started-at",
+                    "STARTED".equalsIgnoreCase(data.getString("result", ""))
+                            ? data.getLong("timestamp", 0L) : 0L));
         }
         return latest;
     }
 
-    /** ID del evento cuyo inicio exitoso fue el más reciente. */
     public String getMostRecentlyStartedEvent() {
         long latest = 0L;
         String eventId = null;
         ConfigSection entries = history.getSection("entries");
         for (Map.Entry<String, Object> entry : entries.entrySet()) {
             if (!(entry.getValue() instanceof ConfigSection data)) continue;
-            if (!"STARTED".equalsIgnoreCase(data.getString("result", ""))) continue;
-            long timestamp = data.getLong("timestamp", 0L);
-            if (timestamp > latest) {
-                latest = timestamp;
+            long startedAt = data.getLong("started-at",
+                    "STARTED".equalsIgnoreCase(data.getString("result", ""))
+                            ? data.getLong("timestamp", 0L) : 0L);
+            if (startedAt > latest) {
+                latest = startedAt;
                 eventId = data.getString("event", null);
             }
         }
@@ -106,17 +130,14 @@ public final class EventHistoryManager {
             String world = data.getString("world", "-");
             String coordinates = data.containsKey("x")
                     ? data.getInt("x") + ", " + data.getInt("y") + ", " + data.getInt("z") : "-";
-            String date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ROOT)
-                    .format(new Date(timestamp));
+            String date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ROOT).format(new Date(timestamp));
             ordered.add(Map.entry(timestamp, date + " | " + event + " | " + result
                     + " | " + world + " (" + coordinates + ")"));
         }
         ordered.sort(Map.Entry.<Long, String>comparingByKey(Comparator.reverseOrder()));
         int limit = Math.max(1, Math.min(10, requestedLimit));
         List<String> result = new ArrayList<>();
-        for (int i = 0; i < Math.min(limit, ordered.size()); i++) {
-            result.add(ordered.get(i).getValue());
-        }
+        for (int i = 0; i < Math.min(limit, ordered.size()); i++) result.add(ordered.get(i).getValue());
         return result;
     }
 }

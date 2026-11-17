@@ -4,6 +4,7 @@ import com.brunojaeger.worldevents.event.WorldEvent;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Locale;
 import java.util.function.Supplier;
 
 public final class EventRegistry {
@@ -13,7 +14,7 @@ public final class EventRegistry {
         if (id == null || id.isBlank() || factory == null) {
             throw new IllegalArgumentException("El identificador y la fábrica del evento son obligatorios.");
         }
-        factories.put(id.toLowerCase(), factory);
+        factories.put(id.toLowerCase(Locale.ROOT), factory);
     }
 
     public WorldEvent create(String id) {

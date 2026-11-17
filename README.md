@@ -48,7 +48,7 @@ Plugin de eventos dinamicos para **NukkitPetteriM1Edition (PM1E)**.
 
 - `pending-event.yml`: ubicacion, fase y marcador del cofre temporal para recuperacion.
 - `statistics.yml`: reclamaciones por UUID y total acumulado.
-- `rewards.yml`: cantidades de recompensas y rangos monetarios.
+- `rewards.yml`: activa/desactiva todas las recompensas con `enabled` y configura cantidades de objetos y rangos monetarios.
 
 La reclamacion se registra en disco antes de entregar el premio para impedir duplicaciones tras un cierre abrupto. Como contrapartida, un cierre en el instante exacto entre el registro y la entrega puede dejar una reclamacion contabilizada sin que el jugador haya recibido todos los premios.
 

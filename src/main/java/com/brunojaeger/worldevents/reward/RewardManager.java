@@ -23,7 +23,7 @@ public final class RewardManager {
     }
 
     public void give(String eventId, Player player) {
-        if (!"losttreasure".equals(eventId)) return;
+        if (!rewards.getBoolean("enabled", true) || !"losttreasure".equals(eventId)) return;
         String base = eventId + ".";
         int minMoney = Math.max(0, rewards.getInt(base + "money-min", 0));
         int maxMoney = Math.max(minMoney, rewards.getInt(base + "money-max", minMoney));

@@ -117,10 +117,15 @@ public final class LostTreasureEvent implements WorldEvent {
         statistics.recordTreasureClaim(player);
         rewards.give(getId(), player);
         player.sendMessage(plugin.getMessages().get("treasure-claimed"));
-        storage.removeOwnedTreasureChest(location.getLevel(), location.getX(), chestY,
+        boolean cleaned = storage.removeOwnedTreasureChest(location.getLevel(), location.getX(), chestY,
                 location.getZ(), storageMarker);
-        chestPlaced = false;
-        storage.clearTreasure();
+        if (cleaned) {
+            chestPlaced = false;
+            storage.clearTreasure();
+        } else {
+            plugin.getLogger().warning("La recompensa fue reclamada, pero la limpieza del cofre queda pendiente hasta cargar su chunk.");
+            chestPlaced = false;
+        }
         state = EventState.COMPLETED;
         return true;
     }
@@ -164,10 +169,14 @@ public final class LostTreasureEvent implements WorldEvent {
             return;
         }
         int y = location.getY() + 1;
-        storage.removeOwnedTreasureChest(location.getLevel(), location.getX(), y,
+        boolean cleaned = storage.removeOwnedTreasureChest(location.getLevel(), location.getX(), y,
                 location.getZ(), storageMarker);
-        chestPlaced = false;
-        storage.clearTreasure();
+        if (cleaned) {
+            chestPlaced = false;
+            storage.clearTreasure();
+        } else {
+            plugin.getLogger().warning("La limpieza del cofre queda pendiente hasta que vuelva a cargarse su chunk.");
+        }
     }
 
     @Override public void stop() {

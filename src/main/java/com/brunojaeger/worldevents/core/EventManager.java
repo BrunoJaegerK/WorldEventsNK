@@ -1,7 +1,6 @@
 package com.brunojaeger.worldevents.core;
 
 import cn.nukkit.Player;
-import cn.nukkit.block.Block;
 import cn.nukkit.level.Level;
 import cn.nukkit.utils.Config;
 import com.brunojaeger.worldevents.WorldEventsNK;
@@ -122,13 +121,7 @@ public final class EventManager {
     }
 
     public boolean isTreasureBlock(Level level, int x, int y, int z) {
-        if (!(activeEvent instanceof LostTreasureEvent treasure) || treasure.isClaimed()
-                || treasure.getLocation() == null) return false;
-        return treasure.getLocation().getLevel() == level
-                && treasure.getLocation().getX() == x
-                && treasure.getLocation().getY() + 1 == y
-                && treasure.getLocation().getZ() == z
-                && level.getBlock(x, y, z).getId() == Block.CHEST;
+        return activeEvent instanceof LostTreasureEvent treasure && treasure.ownsChest(level, x, y, z);
     }
 
     public WorldEvent getActiveEvent() { return activeEvent; }

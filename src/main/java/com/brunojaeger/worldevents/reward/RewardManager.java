@@ -25,23 +25,31 @@ public final class RewardManager {
     public void give(String eventId, Player player) {
         if (!rewards.getBoolean("enabled", true) || !"losttreasure".equals(eventId)) return;
         String base = eventId + ".";
-        int minMoney = Math.max(0, rewards.getInt(base + "money-min", 0));
-        int maxMoney = Math.max(minMoney, rewards.getInt(base + "money-max", minMoney));
+        int minMoney = clampReward(rewards.getInt(base + "money-min", 0));
+        int maxMoney = Math.max(minMoney, clampReward(rewards.getInt(base + "money-max", minMoney)));
         if (maxMoney > 0 && economy.isAvailable()) {
-            economy.deposit(player, ThreadLocalRandom.current().nextInt(minMoney, maxMoney + 1));
+            economy.deposit(player, randomInclusive(minMoney, maxMoney));
         }
         giveItem(player, Item.DIAMOND, base + "diamond-min", base + "diamond-max", 2, 6);
         giveItem(player, Item.EMERALD, base + "emerald-min", base + "emerald-max", 3, 8);
     }
 
     private void giveItem(Player player, int itemId, String minPath, String maxPath, int defaultMin, int defaultMax) {
-        int min = Math.max(0, rewards.getInt(minPath, defaultMin));
-        int max = Math.max(min, rewards.getInt(maxPath, defaultMax));
+        int min = clampReward(rewards.getInt(minPath, defaultMin));
+        int max = Math.max(min, clampReward(rewards.getInt(maxPath, defaultMax)));
         if (max > 0) {
-            Item reward = Item.get(itemId, 0, ThreadLocalRandom.current().nextInt(min, max + 1));
+            Item reward = Item.get(itemId, 0, randomInclusive(min, max));
             for (Item leftover : player.getInventory().addItem(reward)) {
                 player.getLevel().dropItem(player, leftover);
             }
         }
+    }
+
+    private int clampReward(int amount) {
+        return Math.max(0, Math.min(1_000_000, amount));
+    }
+
+    private int randomInclusive(int minimum, int maximum) {
+        return ThreadLocalRandom.current().nextInt(minimum, maximum + 1);
     }
 }

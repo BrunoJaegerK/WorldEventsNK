@@ -78,7 +78,7 @@ public final class MyEconomyBridge extends PluginBase {
 
 - Solo se permite un proveedor externo registrado a la vez.
 - El proveedor debe devolver `true` únicamente si confirmó el depósito; no debe usar el resultado de una llamada asíncrona todavía pendiente como éxito.
-- Si el proveedor externo no está disponible o lanza una excepción, WorldEventsNK intenta el proveedor configurado en `integrations.yml` (por defecto EconomyAPI).
+- Si el proveedor externo informa que no está disponible, WorldEventsNK intenta el proveedor configurado en `integrations.yml` (por defecto EconomyAPI). Si lanza una excepción durante un depósito, la operación se cancela sin fallback porque el depósito podría haberse aplicado antes del error y un segundo proveedor podría duplicarlo.
 - `/we reload` recarga la configuración de EconomyAPI sin eliminar el proveedor externo registrado.
 - El adaptador debe desregistrarse en `onDisable()`.
 - El sistema no puede garantizar transacciones exactamente-una-vez frente a cierres abruptos: el proveedor debe implementar sus propias garantías si su API lo permite.

@@ -221,6 +221,7 @@ public final class EventManager {
         eventDefinitions.reload();
         rewards.reload();
         economy.reload();
+        plugin.getProtectionManager().reload();
         plugin.getMessages().reload();
         resetAutomaticCountdown();
     }

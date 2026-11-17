@@ -22,6 +22,3 @@ permissions:
   worldevents.stop:
     description: Permite detener eventos
     default: op
-  worldevents.stats:
-    description: Permite consultar estadísticas
-    default: true

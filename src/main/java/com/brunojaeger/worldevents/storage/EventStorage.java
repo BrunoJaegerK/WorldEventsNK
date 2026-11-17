@@ -99,7 +99,6 @@ public final class EventStorage {
     public void recover() {
         if (!pending.getBoolean("treasure.active", false)) return;
         String worldName = pending.getString("treasure.world", "");
-        String marker = pending.getString("treasure.marker", "");
         int x = pending.getInt("treasure.x");
         int y = pending.getInt("treasure.y");
         int z = pending.getInt("treasure.z");

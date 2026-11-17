@@ -35,3 +35,6 @@ protection:
 
 performance:
   max-block-changes-per-event: 150
+
+statistics:
+  enabled: true

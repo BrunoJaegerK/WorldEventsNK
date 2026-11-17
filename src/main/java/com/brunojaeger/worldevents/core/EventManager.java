@@ -41,6 +41,7 @@ public final class EventManager {
     }
 
     public boolean start(String id) {
+        if (!plugin.getConfig().getBoolean("events.enabled", true)) return false;
         if (activeEvent != null && !activeEvent.isFinished()) return false;
         String normalized = id.toLowerCase(Locale.ROOT);
         if ("random".equals(normalized)) normalized = chooseRandomEvent();
@@ -76,7 +77,14 @@ public final class EventManager {
     }
 
     public void tick() {
-        if (!plugin.getConfig().getBoolean("events.enabled", true)) return;
+        if (!plugin.getConfig().getBoolean("events.enabled", true)) {
+            if (activeEvent != null) {
+                activeEvent.stop();
+                activeEvent = null;
+                resetAutomaticCountdown();
+            }
+            return;
+        }
         if (activeEvent != null) {
             activeEvent.tick();
             if (activeEvent.isFinished()) {

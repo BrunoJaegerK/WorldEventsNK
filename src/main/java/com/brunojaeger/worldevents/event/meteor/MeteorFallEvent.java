@@ -110,14 +110,20 @@ public final class MeteorFallEvent implements WorldEvent {
         if (changes.size() > maxChanges) return reject("se excedio el limite de cambios");
 
         List<BlockChange> applied = new ArrayList<>();
-        for (BlockChange change : changes) {
-            if (!level.setBlock(change.x, change.y, change.z, Block.get(change.newId), false, true)) {
-                rollback(level, applied);
-                return reject("Nukkit no pudo aplicar todos los cambios; se revirtio el impacto");
+        try {
+            for (BlockChange change : changes) {
+                if (!level.setBlock(change.x, change.y, change.z, Block.get(change.newId), false, true)) {
+                    rollback(level, applied);
+                    return reject("Nukkit no pudo aplicar todos los cambios; se revirtio el impacto");
+                }
+                applied.add(change);
             }
-            applied.add(change);
+            return true;
+        } catch (RuntimeException error) {
+            rollback(level, applied);
+            plugin.getLogger().error("Excepcion al aplicar MeteorFall; se intento revertir el terreno.", error);
+            return reject("una excepcion interrumpio el impacto");
         }
-        return true;
     }
 
     private void rollback(Level level, List<BlockChange> applied) {

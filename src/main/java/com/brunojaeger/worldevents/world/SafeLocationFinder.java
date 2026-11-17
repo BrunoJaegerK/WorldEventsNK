@@ -1,5 +1,6 @@
 package com.brunojaeger.worldevents.world;
 
+import cn.nukkit.Player;
 import cn.nukkit.block.Block;
 import cn.nukkit.level.Level;
 import cn.nukkit.level.format.FullChunk;
@@ -51,11 +52,30 @@ public final class SafeLocationFinder {
             Vector3 spawn = level.getProvider().getSpawn();
             if (spawn == null) continue;
 
+            List<Player> playersInWorld = new ArrayList<>();
+            for (Player player : plugin.getServer().getOnlinePlayers().values()) {
+                if (player.getLevel() == level) playersInWorld.add(player);
+            }
+
             for (int i = 0; i < attempts; i++) {
-                double distance = ThreadLocalRandom.current().nextDouble(minDistance, (double) maxDistance);
+                double anchorX;
+                double anchorZ;
+                double distance;
+                if (!playersInWorld.isEmpty()) {
+                    Player anchor = playersInWorld.get(ThreadLocalRandom.current().nextInt(playersInWorld.size()));
+                    anchorX = anchor.getX();
+                    anchorZ = anchor.getZ();
+                    distance = ThreadLocalRandom.current().nextDouble(64, 193);
+                } else {
+                    // En mundos sin jugadores solo se buscan chunks ya cargados cerca del spawn.
+                    anchorX = spawn.x;
+                    anchorZ = spawn.z;
+                    double upperDistance = Math.min((double) maxDistance, (double) minDistance + 257.0);
+                    distance = ThreadLocalRandom.current().nextDouble(minDistance, upperDistance);
+                }
                 double angle = ThreadLocalRandom.current().nextDouble(0, Math.PI * 2);
-                int x = (int) Math.floor(spawn.x + Math.cos(angle) * distance);
-                int z = (int) Math.floor(spawn.z + Math.sin(angle) * distance);
+                int x = (int) Math.floor(anchorX + Math.cos(angle) * distance);
+                int z = (int) Math.floor(anchorZ + Math.sin(angle) * distance);
 
                 double spawnDistanceSquared = (x - spawn.x) * (double) (x - spawn.x)
                         + (z - spawn.z) * (double) (z - spawn.z);

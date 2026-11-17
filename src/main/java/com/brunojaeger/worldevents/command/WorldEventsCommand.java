@@ -34,7 +34,7 @@ public final class WorldEventsCommand {
                 return true;
             }
             case "start" -> {
-                if (!sender.hasPermission("worldevents.start")) return noPermission(sender);
+                if (!sender.hasPermission("worldevents.start") && !sender.hasPermission("worldevents.admin")) return noPermission(sender);
                 if (args.length < 2) {
                     sender.sendMessage(plugin.getMessages().get("unknown-event"));
                     return true;
@@ -53,7 +53,7 @@ public final class WorldEventsCommand {
                 return true;
             }
             case "stop" -> {
-                if (!sender.hasPermission("worldevents.stop")) return noPermission(sender);
+                if (!sender.hasPermission("worldevents.stop") && !sender.hasPermission("worldevents.admin")) return noPermission(sender);
                 sender.sendMessage(manager.stop()
                         ? plugin.getMessages().get("event-stopped")
                         : plugin.getMessages().get("no-active-event"));

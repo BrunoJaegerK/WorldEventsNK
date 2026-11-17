@@ -25,6 +25,7 @@ public final class EventManager {
     private final EconomyManager economy;
     private final RewardManager rewards;
     private final Config eventDefinitions;
+    private final EventRegistry registry = new EventRegistry();
     private WorldEvent activeEvent;
     private int automaticCountdown;
 
@@ -34,6 +35,8 @@ public final class EventManager {
         this.economy = new EconomyManager(plugin);
         this.rewards = new RewardManager(plugin, economy);
         this.eventDefinitions = new Config(new File(plugin.getDataFolder(), "events.yml"), Config.YAML);
+        registry.register("meteorfall", () -> new MeteorFallEvent(plugin, locations));
+        registry.register("losttreasure", () -> new LostTreasureEvent(plugin, locations, rewards));
         resetAutomaticCountdown();
     }
 
@@ -41,15 +44,11 @@ public final class EventManager {
         if (activeEvent != null && !activeEvent.isFinished()) return false;
         String normalized = id.toLowerCase(Locale.ROOT);
         if ("random".equals(normalized)) normalized = chooseRandomEvent();
-        if (normalized == null || !eventDefinitions.getBoolean(normalized + ".enabled", true)) return false;
+        if (normalized == null || !registry.contains(normalized)
+                || !eventDefinitions.getBoolean(normalized + ".enabled", true)) return false;
 
-        WorldEvent event;
-        switch (normalized) {
-            case "meteorfall" -> event = new MeteorFallEvent(plugin, locations);
-            case "losttreasure" -> event = new LostTreasureEvent(plugin, locations, rewards);
-            default -> { return false; }
-        }
-        if (!event.start()) {
+        WorldEvent event = registry.create(normalized);
+        if (event == null || !event.start()) {
             plugin.getLogger().warning("No se pudo iniciar " + normalized + ": no se encontró una ubicación válida.");
             return false;
         }
@@ -58,17 +57,22 @@ public final class EventManager {
     }
 
     private String chooseRandomEvent() {
-        List<String> enabled = new ArrayList<>();
+        List<String> candidates = new ArrayList<>();
         int totalWeight = 0;
-        for (String id : List.of("meteorfall", "losttreasure")) {
+        for (String id : registry.getFactories().keySet()) {
             if (!eventDefinitions.getBoolean(id + ".enabled", true)) continue;
             int weight = Math.max(0, eventDefinitions.getInt(id + ".weight", 50));
             if (weight == 0) continue;
+            candidates.add(id);
             totalWeight += weight;
-            for (int i = 0; i < weight; i++) enabled.add(id);
         }
-        if (enabled.isEmpty() || totalWeight <= 0) return null;
-        return enabled.get(ThreadLocalRandom.current().nextInt(enabled.size()));
+        if (totalWeight <= 0) return null;
+        int selection = ThreadLocalRandom.current().nextInt(totalWeight);
+        for (String id : candidates) {
+            selection -= eventDefinitions.getInt(id + ".weight", 50);
+            if (selection < 0) return id;
+        }
+        return candidates.get(candidates.size() - 1);
     }
 
     public void tick() {
@@ -119,11 +123,13 @@ public final class EventManager {
 
     public WorldEvent getActiveEvent() { return activeEvent; }
     public boolean hasActiveEvent() { return activeEvent != null; }
+    public EventRegistry getRegistry() { return registry; }
 
     public void reload() {
         plugin.reloadConfig();
         eventDefinitions.reload();
         rewards.reload();
+        plugin.getMessages().reload();
         resetAutomaticCountdown();
     }
 

@@ -6,6 +6,7 @@ import com.brunojaeger.worldevents.WorldEventsNK;
 import com.brunojaeger.worldevents.core.EventState;
 import com.brunojaeger.worldevents.event.WorldEvent;
 import com.brunojaeger.worldevents.reward.RewardManager;
+import com.brunojaeger.worldevents.storage.TreasureRecoveryStorage;
 import com.brunojaeger.worldevents.world.EventLocation;
 import com.brunojaeger.worldevents.world.SafeLocationFinder;
 
@@ -45,9 +46,14 @@ public final class LostTreasureEvent implements WorldEvent {
             state = EventState.FAILED;
             return false;
         }
+        if (!TreasureRecoveryStorage.save(plugin, location)) {
+            state = EventState.FAILED;
+            return false;
+        }
         chestPlaced = location.getLevel().setBlock(location.getX(), chestY, location.getZ(),
                 Block.get(Block.CHEST), false, true);
         if (!chestPlaced) {
+            TreasureRecoveryStorage.clear(plugin);
             state = EventState.FAILED;
             return false;
         }
@@ -79,6 +85,7 @@ public final class LostTreasureEvent implements WorldEvent {
         player.sendMessage("§aHas reclamado el tesoro perdido.");
         location.getLevel().setBlock(location.getX(), chestY, location.getZ(), Block.get(Block.AIR), false, true);
         chestPlaced = false;
+        TreasureRecoveryStorage.clear(plugin);
         state = EventState.COMPLETED;
         return true;
     }
@@ -127,6 +134,7 @@ public final class LostTreasureEvent implements WorldEvent {
             location.getLevel().setBlock(location.getX(), y, location.getZ(), Block.get(Block.AIR), false, true);
         }
         chestPlaced = false;
+        TreasureRecoveryStorage.clear(plugin);
     }
 
     @Override public void stop() {

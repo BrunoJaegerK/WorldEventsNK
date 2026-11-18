@@ -1,5 +1,16 @@
 # WorldEventsNK
 
+<p align="center">
+  <img src="https://img.shields.io/badge/Minecraft-Bedrock%20Edition-43A047?style=for-the-badge&logo=minecraft&logoColor=white" alt="Minecraft Bedrock Edition">
+  <img src="https://img.shields.io/badge/Server-NukkitPetteriM1Edition-2196F3?style=for-the-badge" alt="NukkitPetteriM1Edition">
+  <img src="https://img.shields.io/badge/Java-17-orange?style=for-the-badge&logo=openjdk&logoColor=white" alt="Java 17">
+  <img src="https://img.shields.io/badge/Build-Maven-C71A36?style=for-the-badge&logo=apachemaven&logoColor=white" alt="Maven">
+</p>
+
+<p align="center"><b>Plugin de eventos dinámicos para NukkitPetteriM1Edition, con MeteorFall, LostTreasure, recompensas configurables y API extensible para eventos e integraciones.</b></p>
+
+---
+
 Plugin de eventos dinámicos para **NukkitPetteriM1Edition (PM1E)**.
 
 - Autor: BrunoJaegerK
@@ -97,3 +108,17 @@ El JAR se genera en `target/WorldEventsNK.jar`. GitHub Actions construye primero
 - La protección genérica solo puede respetar regiones de terceros cuando existe un adaptador registrado para ese plugin.
 - La selección considera todos los mundos cargados y no excluidos. Usa jugadores como referencia cuando los hay y el spawn en mundos sin jugadores; nunca fuerza la generación de chunks.
 - No se ha validado aún el comportamiento visual y de juego dentro de una instancia real de servidor; la compilación automatizada valida compatibilidad de código/API, no una prueba de gameplay.
+
+## ℹ️ About
+
+Plugin de eventos dinámicos para NukkitPetteriM1Edition, con MeteorFall, LostTreasure, recompensas configurables y API extensible para eventos e integraciones.
+
+- **Autor:** BrunoJaegerK
+- **Servidor objetivo:** NukkitPetteriM1Edition (Minecraft Bedrock)
+- **Repositorio:** https://github.com/BrunoJaegerK/WorldEventsNK
+
+## 📜 Licencia
+
+Este proyecto se distribuye bajo **GPL-3.0**. Puedes utilizarlo, modificarlo y redistribuirlo respetando los términos de la licencia, conservando los avisos de copyright y atribución aplicables. En el caso de GPL-3.0, las versiones modificadas distribuidas deben permanecer bajo GPL-3.0 y proporcionar el código fuente correspondiente.
+
+Consulta el archivo [LICENSE](LICENSE) para leer el texto completo.
